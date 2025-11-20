@@ -7,8 +7,10 @@ node_modules/
 /coverage
 
 # Production
-/build
-/dist
+build/
+dist/
+frontend/build/
+backend/dist/
 
 # Environment variables
 .env
