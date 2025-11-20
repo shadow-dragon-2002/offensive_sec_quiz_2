@@ -1,0 +1,27 @@
+{
+  "name": "offensive-sec-quiz-escape-room",
+  "version": "2.0.0",
+  "description": "Offensive Security Escape Room - Red Team Ops: A single-port cybersecurity quiz game with 30 progressive challenges",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "cybersecurity",
+    "offensive-security",
+    "quiz",
+    "penetration-testing",
+    "education",
+    "red-team"
+  ],
+  "author": "shadow-dragon-2002",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {}
+}
