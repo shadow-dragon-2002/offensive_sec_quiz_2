@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import './ResultScreen.css';
+import soundEffects from '../utils/soundEffects';
 
 function ResultScreen({ stats, onRestart }) {
+  useEffect(() => {
+    // Play appropriate sound based on result
+    if (stats.completed) {
+      soundEffects.levelComplete();
+    } else {
+      soundEffects.incorrect();
+    }
+  }, [stats]);
   const getResultMessage = () => {
     if (stats.completed) {
       return {
@@ -180,6 +189,7 @@ function ResultScreen({ stats, onRestart }) {
         <motion.button 
           className="restart-button neon-button" 
           onClick={onRestart}
+          onMouseEnter={() => soundEffects.hover()}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           initial={{ opacity: 0 }}

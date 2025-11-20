@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './StartScreen.css';
 import { healthCheck } from '../utils/api';
+import soundEffects from '../utils/soundEffects';
 
 function StartScreen({ onStart }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,6 +11,7 @@ function StartScreen({ onStart }) {
   const handleStart = async () => {
     setIsLoading(true);
     setError(null);
+    soundEffects.gameStart();
 
     try {
       // Check backend health first
@@ -17,6 +19,7 @@ function StartScreen({ onStart }) {
       if (!isHealthy) {
         setError('Backend server is not responding. Please ensure it is running.');
         setIsLoading(false);
+        soundEffects.incorrect();
         return;
       }
 
@@ -26,6 +29,7 @@ function StartScreen({ onStart }) {
       console.error('[StartScreen] Error starting quiz:', err);
       setError('Failed to start quiz. Please try again or refresh the page.');
       setIsLoading(false);
+      soundEffects.incorrect();
     }
   };
   return (
@@ -135,6 +139,7 @@ function StartScreen({ onStart }) {
             <button 
               className="neon-button" 
               onClick={handleStart}
+              onMouseEnter={() => soundEffects.hover()}
               disabled={isLoading}
               style={{
                 opacity: isLoading ? 0.6 : 1,

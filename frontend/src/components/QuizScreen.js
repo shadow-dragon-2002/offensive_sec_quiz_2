@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './QuizScreen.css';
 import api, { withHealthCheck } from '../utils/api';
+import soundEffects from '../utils/soundEffects';
 
 function QuizScreen({ onComplete, onSessionLocked }) {
   const [question, setQuestion] = useState(null);
@@ -82,6 +83,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const handleAnswerSelect = (index) => {
     if (!isSubmitting && !feedback) {
       setSelectedAnswer(index);
+      soundEffects.click();
     }
   };
 
@@ -111,8 +113,10 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         });
 
         if (response.data.isCorrect) {
+          soundEffects.correct();
           setTimeout(() => {
             if (response.data.isCompleted) {
+              soundEffects.levelComplete();
               onComplete({
                 score: response.data.score,
                 correctAnswers: response.data.currentLevel - 1,
@@ -123,6 +127,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
             }
           }, 2000);
         } else if (response.data.isLocked) {
+          soundEffects.incorrect();
           setTimeout(() => {
             onSessionLocked({
               score: response.data.score,
@@ -130,8 +135,12 @@ function QuizScreen({ onComplete, onSessionLocked }) {
               locked: true
             });
           }, 2000);
+        } else {
+          // Wrong answer but not locked - still play error sound
+          soundEffects.incorrect();
         }
       } else {
+        soundEffects.incorrect();
         setError('Failed to submit answer: ' + response.data.message);
       }
     } catch (err) {
@@ -236,6 +245,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
                   feedback && selectedAnswer === index && !feedback.isCorrect ? 'incorrect' : ''
                 }`}
                 onClick={() => handleAnswerSelect(index)}
+                onMouseEnter={() => !feedback && !isSubmitting && soundEffects.hover()}
                 disabled={isSubmitting || feedback}
                 whileHover={{ scale: feedback ? 1 : 1.02 }}
                 whileTap={{ scale: feedback ? 1 : 0.98 }}
@@ -269,6 +279,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         <button
           className="submit-button neon-button"
           onClick={handleSubmit}
+          onMouseEnter={() => selectedAnswer !== null && !isSubmitting && !feedback && soundEffects.hover()}
           disabled={selectedAnswer === null || isSubmitting || feedback}
         >
           {isSubmitting ? 'SUBMITTING...' : 'SUBMIT ANSWER'}

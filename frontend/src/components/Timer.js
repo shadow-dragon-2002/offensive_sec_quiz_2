@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './Timer.css';
+import soundEffects from '../utils/soundEffects';
 
 function Timer({ timeLimit, onTimeout }) {
   const [timeRemaining, setTimeRemaining] = useState(timeLimit);
+  const lastWarningTimeRef = useRef(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -13,6 +15,18 @@ function Timer({ timeLimit, onTimeout }) {
           onTimeout();
           return 0;
         }
+        
+        // Play warning sound when time is critically low
+        const percentage = (prevTime / timeLimit) * 100;
+        if (percentage <= 10 && percentage > 9) {
+          // Play warning every few seconds in critical time
+          const currentTime = Date.now();
+          if (!lastWarningTimeRef.current || currentTime - lastWarningTimeRef.current > 3000) {
+            soundEffects.timerWarning();
+            lastWarningTimeRef.current = currentTime;
+          }
+        }
+        
         return prevTime - 1000;
       });
     }, 1000);
