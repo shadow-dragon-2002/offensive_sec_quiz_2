@@ -188,7 +188,8 @@ router.post('/answer', (req, res) => {
       return res.status(400).json(result);
     }
 
-    res.json({
+    // Only reveal correct answer if user answered correctly
+    const response = {
       success: true,
       isCorrect: result.isCorrect,
       currentLevel: result.currentLevel,
@@ -200,7 +201,14 @@ router.post('/answer', (req, res) => {
       message: result.isCorrect 
         ? 'ACCESS GRANTED - Proceeding to next sector...' 
         : 'ACCESS DENIED - Security breach detected. Point penalty applied.'
-    });
+    };
+
+    // Only include correct answer if the user got it right (for visual feedback)
+    if (result.isCorrect) {
+      response.correctAnswer = question.correctAnswer;
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('Submit answer error:', error);
     res.status(500).json({

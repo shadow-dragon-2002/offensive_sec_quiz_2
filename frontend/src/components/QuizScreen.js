@@ -102,7 +102,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
       if (response.data.success) {
         setFeedback({
           isCorrect: response.data.isCorrect,
-          correctAnswer: response.data.correctAnswer,
+          correctAnswer: response.data.correctAnswer, // Only present if correct
           message: response.data.message
         });
 
@@ -136,7 +136,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
             });
           }, 2000);
         } else {
-          // Wrong answer but not locked - still play error sound
+          // Wrong answer but not locked - play error sound but do NOT reveal correct answer
           soundEffects.incorrect();
         }
       } else {
@@ -240,7 +240,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
                 className={`answer-option ${
                   selectedAnswer === index ? 'selected' : ''
                 } ${
-                  feedback && index === feedback.correctAnswer ? 'correct' : ''
+                  // Only show correct highlight if user got it right (feedback.isCorrect)
+                  feedback && feedback.isCorrect && index === feedback.correctAnswer ? 'correct' : ''
                 } ${
                   feedback && selectedAnswer === index && !feedback.isCorrect ? 'incorrect' : ''
                 }`}
