@@ -1,0 +1,27 @@
+{
+  "name": "offensive-sec-quiz",
+  "version": "1.0.0",
+  "description": "Offensive Security Escape Room - Red Team Ops Quiz Game",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "node server/index.js",
+    "build": "cd client && npm run build"
+  },
+  "keywords": [
+    "cybersecurity",
+    "offensive-security",
+    "quiz",
+    "penetration-testing",
+    "red-team"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "express-rate-limit": "^7.1.5",
+    "cors": "^2.8.5"
+  }
+}
