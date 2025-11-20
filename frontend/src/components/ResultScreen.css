@@ -1,0 +1,339 @@
+.result-screen {
+  width: 100%;
+  max-width: 1000px;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.result-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.result-terminal .terminal-body {
+  padding: 3rem 2rem;
+}
+
+/* Result Title */
+.result-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  text-align: center;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  animation: resultPulse 2s infinite;
+}
+
+.result-container.success .result-title {
+  color: #00ff41;
+  text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41;
+}
+
+.result-container.locked .result-title,
+.result-container.timeout .result-title,
+.result-container.ended .result-title {
+  color: #ff0044;
+  text-shadow: 0 0 20px #ff0044, 0 0 40px #ff0044;
+}
+
+@keyframes resultPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.result-message {
+  text-align: center;
+  font-size: 1.3rem;
+  color: rgba(0, 255, 65, 0.8);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: rgba(0, 255, 65, 0.05);
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(0, 255, 65, 0.1),
+    transparent
+  );
+  animation: statShine 3s infinite;
+}
+
+@keyframes statShine {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+  border-color: #00ff41;
+}
+
+.stat-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.5));
+}
+
+.stat-label {
+  color: rgba(0, 255, 65, 0.7);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stat-number {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #00ff41;
+  text-shadow: 0 0 15px #00ff41;
+}
+
+.rank-card {
+  grid-column: span 2;
+  border-width: 3px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Progress Visualization */
+.progress-visualization {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid rgba(0, 255, 65, 0.2);
+  border-radius: 8px;
+}
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  color: #00ff41;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.progress-bar-full {
+  background: rgba(0, 0, 0, 0.5);
+  height: 40px;
+  border-radius: 20px;
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 1s ease-out;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  animation: progressGlow 2s infinite;
+}
+
+@keyframes progressGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 255, 65, 0.8);
+  }
+}
+
+.progress-text {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #000;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+  z-index: 1;
+}
+
+/* Achievement Banner */
+.achievement-banner {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 140, 0, 0.1));
+  border: 3px solid #ffd700;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  text-align: center;
+  overflow: hidden;
+  animation: achievementAppear 1s ease-out;
+}
+
+@keyframes achievementAppear {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.achievement-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.2), transparent);
+  animation: glowPulse 3s infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.achievement-banner h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: #ffd700;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px #ffd700;
+  position: relative;
+  z-index: 1;
+}
+
+.achievement-banner p {
+  color: #ffa500;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0.5rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.achievement-desc {
+  color: rgba(255, 215, 0, 0.8);
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+  margin-top: 1rem !important;
+}
+
+/* Terminal Footer */
+.terminal-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+/* Restart Button */
+.restart-button {
+  width: 100%;
+  font-size: 1.3rem;
+  padding: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .result-terminal .terminal-body {
+    padding: 2rem 1rem;
+  }
+
+  .result-title {
+    font-size: 1.8rem;
+  }
+
+  .result-message {
+    font-size: 1.1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rank-card {
+    grid-column: span 1;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .achievement-banner {
+    padding: 1.5rem;
+  }
+
+  .achievement-banner h3 {
+    font-size: 1.5rem;
+  }
+
+  .achievement-banner p {
+    font-size: 1.1rem;
+  }
+
+  .progress-label {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-icon {
+    font-size: 2rem;
+  }
+
+  .restart-button {
+    font-size: 1.1rem;
+    padding: 1.2rem;
+  }
+}

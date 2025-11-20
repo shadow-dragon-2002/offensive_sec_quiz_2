@@ -1,0 +1,273 @@
+.start-screen {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Terminal Window */
+.terminal-window {
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid #00ff41;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 65, 0.3),
+    inset 0 0 20px rgba(0, 255, 65, 0.05);
+  overflow: hidden;
+}
+
+.terminal-header {
+  background: linear-gradient(180deg, #1a1a1a, #0a0a0a);
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid #00ff41;
+}
+
+.terminal-button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.terminal-button.red {
+  background: #ff0044;
+  box-shadow: 0 0 5px #ff0044;
+}
+
+.terminal-button.yellow {
+  background: #ffa500;
+  box-shadow: 0 0 5px #ffa500;
+}
+
+.terminal-button.green {
+  background: #00ff41;
+  box-shadow: 0 0 5px #00ff41;
+}
+
+.terminal-title {
+  margin-left: auto;
+  color: rgba(0, 255, 65, 0.7);
+  font-size: 0.9rem;
+  font-family: 'Courier New', monospace;
+}
+
+.terminal-body {
+  padding: 2rem;
+  font-family: 'Courier New', monospace;
+  line-height: 1.6;
+}
+
+.terminal-text {
+  margin: 0.5rem 0;
+  color: #00ff41;
+  font-size: 0.95rem;
+}
+
+.prompt {
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+.success-text {
+  color: #00ff41;
+  font-weight: bold;
+}
+
+.info-text {
+  color: #ffa500;
+  font-weight: bold;
+}
+
+.warning-text {
+  color: #ff0044;
+  font-weight: bold;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Challenge Info */
+.challenge-info {
+  background: rgba(0, 255, 65, 0.05);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.challenge-info h2 {
+  font-family: 'Orbitron', sans-serif;
+  color: #00ff41;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  text-shadow: 0 0 10px #00ff41;
+}
+
+.challenge-info h3 {
+  font-family: 'Orbitron', sans-serif;
+  color: #00d4ff;
+  font-size: 1.1rem;
+  margin: 1.5rem 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.challenge-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.challenge-info li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+  font-size: 1rem;
+  color: rgba(0, 255, 65, 0.9);
+}
+
+.challenge-info li:last-child {
+  border-bottom: none;
+}
+
+.challenge-info strong {
+  color: #00ff41;
+  font-weight: 700;
+}
+
+/* Difficulty Levels */
+.difficulty-levels {
+  margin-top: 1.5rem;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.category {
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+}
+
+.category.easy {
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid #00ff41;
+  color: #00ff41;
+}
+
+.category.medium {
+  background: rgba(255, 165, 0, 0.1);
+  border: 1px solid #ffa500;
+  color: #ffa500;
+}
+
+.category.hard {
+  background: rgba(255, 0, 68, 0.1);
+  border: 1px solid #ff0044;
+  color: #ff0044;
+}
+
+.category.expert {
+  background: rgba(138, 43, 226, 0.1);
+  border: 1px solid #8a2be2;
+  color: #8a2be2;
+}
+
+.category:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 255, 65, 0.3);
+}
+
+/* Warning Message */
+.terminal-text.warning {
+  color: #ff0044;
+  font-weight: bold;
+  margin-top: 2rem;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+/* Start Button */
+.start-button {
+  width: 100%;
+  font-size: 1.5rem;
+  padding: 1.5rem;
+  animation: buttonPulse 2s infinite;
+}
+
+@keyframes buttonPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 255, 65, 0.8);
+  }
+}
+
+.button-icon {
+  font-size: 1.2em;
+  animation: arrowMove 1s infinite;
+}
+
+@keyframes arrowMove {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .terminal-body {
+    padding: 1rem;
+  }
+
+  .challenge-info {
+    padding: 1rem;
+  }
+
+  .categories {
+    grid-template-columns: 1fr;
+  }
+
+  .start-button {
+    font-size: 1.2rem;
+    padding: 1.2rem;
+  }
+
+  .terminal-text {
+    font-size: 0.85rem;
+  }
+}
