@@ -293,7 +293,7 @@ async function checkDependencies() {
   const backendNodeModules = path.join(CONFIG.BACKEND_DIR, 'node_modules');
   if (!fs.existsSync(backendNodeModules)) {
     logger.warn('Backend dependencies not installed. Installing...');
-    return new Promise((resolve) => {
+    await new Promise((resolve) => {
       const install = spawn('npm', ['install'], {
         cwd: CONFIG.BACKEND_DIR,
         stdio: 'pipe',
@@ -317,7 +317,7 @@ async function checkDependencies() {
   const frontendNodeModules = path.join(CONFIG.FRONTEND_DIR, 'node_modules');
   if (!fs.existsSync(frontendNodeModules)) {
     logger.warn('Frontend dependencies not installed. Installing...');
-    return new Promise((resolve) => {
+    await new Promise((resolve) => {
       const install = spawn('npm', ['install'], {
         cwd: CONFIG.FRONTEND_DIR,
         stdio: 'pipe',
