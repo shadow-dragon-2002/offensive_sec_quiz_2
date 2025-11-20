@@ -12,6 +12,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
 
   useEffect(() => {
     fetchQuestion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchQuestion = async () => {
