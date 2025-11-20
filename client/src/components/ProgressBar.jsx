@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 
 function ProgressBar({ current, total }) {
-  const percentage = Math.round((current / total) * 100);
+  const percentage = Math.round(((current || 0) / total) * 100) || 0;
 
   return (
     <div className="w-full">
