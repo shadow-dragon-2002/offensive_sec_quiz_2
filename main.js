@@ -325,12 +325,33 @@ BROWSER=none
 async function checkDependencies() {
   logger.section('Checking Dependencies');
 
-  // Check backend dependencies
+  // Check and install backend dependencies
   const backendNodeModules = path.join(CONFIG.BACKEND_DIR, 'node_modules');
-  if (!fs.existsSync(backendNodeModules)) {
-    logger.warn('Backend dependencies not installed. Installing...');
+  const backendPackageJson = path.join(CONFIG.BACKEND_DIR, 'package.json');
+  
+  // Always check if key packages exist
+  let backendNeedsInstall = !fs.existsSync(backendNodeModules);
+  if (!backendNeedsInstall && fs.existsSync(backendPackageJson)) {
+    try {
+      const pkgContent = fs.readFileSync(backendPackageJson, 'utf8');
+      const pkg = JSON.parse(pkgContent);
+      const requiredPackages = ['express', 'express-session', 'cors'];
+      for (const pkg_name of requiredPackages) {
+        const pkgPath = path.join(backendNodeModules, pkg_name);
+        if (!fs.existsSync(pkgPath)) {
+          backendNeedsInstall = true;
+          break;
+        }
+      }
+    } catch (err) {
+      logger.debug('Could not check backend packages:', err.message);
+    }
+  }
+
+  if (backendNeedsInstall) {
+    logger.warn('Backend dependencies incomplete or missing. Installing...');
     await new Promise((resolve, reject) => {
-      const install = spawn('npm', ['install', '--prefer-offline', '--no-audit'], {
+      const install = spawn('npm', ['install', '--force'], {
         cwd: CONFIG.BACKEND_DIR,
         stdio: 'pipe',
       });
@@ -342,8 +363,11 @@ async function checkDependencies() {
 
       install.on('close', (code) => {
         if (code === 0) {
-          logger.success('Backend dependencies installed');
-          resolve();
+          logger.success('Backend dependencies installed successfully');
+          // Wait a moment for file system to settle
+          setTimeout(() => {
+            resolve();
+          }, 2000);
         } else {
           logger.error('Failed to install backend dependencies');
           if (errorOutput) {
@@ -362,15 +386,35 @@ async function checkDependencies() {
       process.exit(1);
     });
   } else {
-    logger.success('Backend dependencies already installed');
+    logger.success('Backend dependencies verified');
   }
 
-  // Check frontend dependencies
+  // Check and install frontend dependencies
   const frontendNodeModules = path.join(CONFIG.FRONTEND_DIR, 'node_modules');
-  if (!fs.existsSync(frontendNodeModules)) {
-    logger.warn('Frontend dependencies not installed. Installing...');
+  const frontendPackageJson = path.join(CONFIG.FRONTEND_DIR, 'package.json');
+  
+  let frontendNeedsInstall = !fs.existsSync(frontendNodeModules);
+  if (!frontendNeedsInstall && fs.existsSync(frontendPackageJson)) {
+    try {
+      const pkgContent = fs.readFileSync(frontendPackageJson, 'utf8');
+      const pkg = JSON.parse(pkgContent);
+      const requiredPackages = ['react', 'react-dom'];
+      for (const pkg_name of requiredPackages) {
+        const pkgPath = path.join(frontendNodeModules, pkg_name);
+        if (!fs.existsSync(pkgPath)) {
+          frontendNeedsInstall = true;
+          break;
+        }
+      }
+    } catch (err) {
+      logger.debug('Could not check frontend packages:', err.message);
+    }
+  }
+
+  if (frontendNeedsInstall) {
+    logger.warn('Frontend dependencies incomplete or missing. Installing...');
     await new Promise((resolve, reject) => {
-      const install = spawn('npm', ['install', '--prefer-offline', '--no-audit'], {
+      const install = spawn('npm', ['install', '--force'], {
         cwd: CONFIG.FRONTEND_DIR,
         stdio: 'pipe',
       });
@@ -382,8 +426,11 @@ async function checkDependencies() {
 
       install.on('close', (code) => {
         if (code === 0) {
-          logger.success('Frontend dependencies installed');
-          resolve();
+          logger.success('Frontend dependencies installed successfully');
+          // Wait a moment for file system to settle
+          setTimeout(() => {
+            resolve();
+          }, 2000);
         } else {
           logger.error('Failed to install frontend dependencies');
           if (errorOutput) {
@@ -402,7 +449,7 @@ async function checkDependencies() {
       process.exit(1);
     });
   } else {
-    logger.success('Frontend dependencies already installed');
+    logger.success('Frontend dependencies verified');
   }
 }
 
@@ -447,7 +494,10 @@ class ProcessManager {
       logger.section('Starting Backend Server');
       logger.info(`Starting backend on port ${CONFIG.BACKEND_PORT}...`);
 
-      const backend = spawn('npm', ['start'], {
+      // Use node directly instead of npm start to avoid module resolution issues
+      const backendScript = path.join(CONFIG.BACKEND_DIR, 'src', 'server.js');
+      
+      const backend = spawn('node', [backendScript], {
         cwd: CONFIG.BACKEND_DIR,
         env: {
           ...process.env,
@@ -455,6 +505,7 @@ class ProcessManager {
           NODE_ENV: CONFIG.NODE_ENV,
           FRONTEND_URL: `http://localhost:${CONFIG.FRONTEND_PORT}`,
           CORS_ORIGIN: `http://localhost:${CONFIG.FRONTEND_PORT}`,
+          NODE_PATH: path.join(CONFIG.BACKEND_DIR, 'node_modules'),
         },
         stdio: ['pipe', 'pipe', 'pipe'],
       });
