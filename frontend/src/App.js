@@ -6,6 +6,7 @@ import QuizScreen from './components/QuizScreen';
 import ResultScreen from './components/ResultScreen';
 import Timer from './components/Timer';
 import api from './utils/api';
+import audioManager from './utils/audioManager';
 
 function App() {
   const [gameState, setGameState] = useState('start'); // start, playing, result
@@ -51,6 +52,10 @@ function App() {
   const startQuiz = async () => {
     try {
       setError(null);
+      // Initialize audio on first user interaction
+      audioManager.init();
+      audioManager.playLaserSwoosh();
+      
       if (!apiReady) {
         setError('Backend server is not available. Please start the backend server.');
         return;
