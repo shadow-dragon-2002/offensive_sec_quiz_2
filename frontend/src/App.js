@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import StartScreen from './components/StartScreen';
 import QuizScreen from './components/QuizScreen';
@@ -11,17 +11,43 @@ function App() {
   const [sessionData, setSessionData] = useState(null);
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
+  const [apiReady, setApiReady] = useState(false);
+
+  // Check API availability on component mount
+  useEffect(() => {
+    const checkAPI = async () => {
+      try {
+        const response = await api.get('/health');
+        if (response.data && response.data.status === 'ok') {
+          setApiReady(true);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('API Health Check Failed:', err);
+        setError('Failed to connect to backend. Please ensure the server is running on http://localhost:5000');
+        setApiReady(false);
+      }
+    };
+
+    checkAPI();
+  }, []);
 
   const startQuiz = async () => {
     try {
       setError(null);
+      if (!apiReady) {
+        setError('Backend server is not available. Please start the backend server.');
+        return;
+      }
       const response = await api.post('/quiz/start');
       if (response.data.success) {
         setSessionData(response.data);
         setGameState('playing');
+      } else {
+        setError('Failed to start quiz. Please try again.');
       }
     } catch (err) {
-      setError('Failed to start quiz. Please try again.');
+      setError('Failed to start quiz. Please ensure the backend server is running.');
       console.error('Start quiz error:', err);
     }
   };
@@ -77,7 +103,17 @@ function App() {
       )}
 
       <main className="main-content">
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            <span className="error-icon">⚠️</span>
+            {error}
+            {!apiReady && (
+              <p style={{ fontSize: '0.9em', marginTop: '10px' }}>
+                Backend is expected at: http://localhost:5000
+              </p>
+            )}
+          </div>
+        )}
         
         {gameState === 'start' && (
           <StartScreen onStart={startQuiz} />

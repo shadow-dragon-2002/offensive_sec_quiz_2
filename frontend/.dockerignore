@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+build/
+.env
+.env.local
+README.md
+CONTRIBUTING.md
+TROUBLESHOOTING.md
+*.md
+public/
+src/

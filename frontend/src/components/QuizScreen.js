@@ -9,6 +9,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const [feedback, setFeedback] = useState(null);
   const [stats, setStats] = useState({ currentLevel: 1, score: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchQuestion();
@@ -18,6 +19,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const fetchQuestion = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await api.get('/quiz/question');
       
       if (response.data.success) {
@@ -36,6 +38,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           setSelectedAnswer(null);
           setFeedback(null);
         }
+      } else {
+        setError('Failed to load question: ' + response.data.message);
       }
     } catch (err) {
       if (err.response?.data?.isLocked) {
@@ -44,8 +48,11 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           correctAnswers: err.response.data.correctAnswers || 0,
           locked: true
         });
+      } else if (err.response?.status === 404) {
+        setError('Session not found. Please start a new quiz.');
       } else {
         console.error('Failed to fetch question:', err);
+        setError('Failed to load question. Please check your connection.');
       }
     } finally {
       setLoading(false);
@@ -77,7 +84,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
 
         setStats({
           currentLevel: response.data.currentLevel,
-          score: response.data.score
+          score: response.data.score,
+          totalQuestions: stats.totalQuestions
         });
 
         if (response.data.isCorrect) {
@@ -101,9 +109,12 @@ function QuizScreen({ onComplete, onSessionLocked }) {
             });
           }, 2000);
         }
+      } else {
+        setError('Failed to submit answer: ' + response.data.message);
       }
     } catch (err) {
       console.error('Failed to submit answer:', err);
+      setError('Error submitting answer. Please try again.');
       setFeedback({
         isCorrect: false,
         message: 'Failed to submit answer. Please try again.'
@@ -119,6 +130,20 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         <div className="loading-container">
           <div className="loader"></div>
           <p className="loading-text">Loading challenge...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="quiz-screen">
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <p className="error-text">{error}</p>
+          <button className="retry-button neon-button" onClick={fetchQuestion}>
+            RETRY
+          </button>
         </div>
       </div>
     );
@@ -159,7 +184,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         <h2 className="question-text">{question.question}</h2>
 
         <div className="answers-grid">
-          {question.options.map((option, index) => (
+          {question.options && question.options.map((option, index) => (
             <button
               key={index}
               className={`answer-option ${
