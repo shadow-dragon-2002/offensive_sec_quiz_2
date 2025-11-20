@@ -108,24 +108,27 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+// Graceful shutdown handler
+const gracefulShutdown = () => {
+  console.log('\n\n🛑 Graceful shutdown initiated...');
   clearInterval(cleanupInterval);
+  
   server.close(() => {
-    console.log('HTTP server closed');
+    console.log('✓ HTTP server closed');
+    sessionManager.cleanupAllSessions?.();
+    console.log('✓ All sessions cleaned up');
     process.exit(0);
   });
-});
 
-process.on('SIGINT', () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  clearInterval(cleanupInterval);
-  server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
-  });
-});
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Force shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 // Start server
 const server = app.listen(PORT, () => {
@@ -182,27 +185,5 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
-
-// Graceful shutdown with cleanup
-const gracefulShutdown = () => {
-  console.log('\n\n🛑 Graceful shutdown initiated...');
-  clearInterval(cleanupInterval);
-  
-  server.close(() => {
-    console.log('✓ HTTP server closed');
-    sessionManager.cleanupAllSessions?.();
-    console.log('✓ All sessions cleaned up');
-    process.exit(0);
-  });
-
-  // Force shutdown after 10 seconds
-  setTimeout(() => {
-    console.error('Force shutdown after timeout');
-    process.exit(1);
-  }, 10000);
-};
-
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
 
 module.exports = app;

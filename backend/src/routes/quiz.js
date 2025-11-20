@@ -3,11 +3,37 @@ const router = express.Router();
 const sessionManager = require('../models/Session');
 const questions = require('../data/escapeRoomQuestions');
 
+// Middleware to validate session exists
+router.use((req, res, next) => {
+  if (!req.sessionID) {
+    return res.status(400).json({
+      success: false,
+      message: 'Session ID is required'
+    });
+  }
+  next();
+});
+
 // Start a new quiz session
 router.post('/start', (req, res) => {
   try {
     const sessionId = req.sessionID;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+    
     const session = sessionManager.createSession(sessionId);
+    
+    if (!session) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create session'
+      });
+    }
     
     res.json({
       success: true,
@@ -17,6 +43,7 @@ router.post('/start', (req, res) => {
       totalQuestions: session.totalQuestions
     });
   } catch (error) {
+    console.error('Start quiz error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to start quiz session',
@@ -87,6 +114,7 @@ router.get('/question', (req, res) => {
       totalQuestions: session.totalQuestions
     });
   } catch (error) {
+    console.error('Get question error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get question',
@@ -101,10 +129,17 @@ router.post('/answer', (req, res) => {
     const sessionId = req.sessionID;
     const { questionId, selectedAnswer } = req.body;
 
-    if (selectedAnswer === undefined || questionId === undefined) {
+    if (selectedAnswer === undefined || selectedAnswer === null) {
       return res.status(400).json({
         success: false,
-        message: 'Question ID and selected answer are required'
+        message: 'Selected answer is required'
+      });
+    }
+
+    if (questionId === undefined || questionId === null) {
+      return res.status(400).json({
+        success: false,
+        message: 'Question ID is required'
       });
     }
 
@@ -114,6 +149,21 @@ router.post('/answer', (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Session not found'
+      });
+    }
+
+    if (session.isLocked) {
+      return res.status(403).json({
+        success: false,
+        message: 'Session is locked',
+        isLocked: true
+      });
+    }
+
+    if (session.isCompleted) {
+      return res.status(403).json({
+        success: false,
+        message: 'Quiz is already completed'
       });
     }
 
@@ -152,6 +202,7 @@ router.post('/answer', (req, res) => {
         : 'ACCESS DENIED - Security breach detected. Point penalty applied.'
     });
   } catch (error) {
+    console.error('Submit answer error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to submit answer',
@@ -164,6 +215,14 @@ router.post('/answer', (req, res) => {
 router.get('/stats', (req, res) => {
   try {
     const sessionId = req.sessionID;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+    
     const stats = sessionManager.getSessionStats(sessionId);
 
     if (!stats) {
@@ -178,6 +237,7 @@ router.get('/stats', (req, res) => {
       stats
     });
   } catch (error) {
+    console.error('Get stats error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get stats',
@@ -190,8 +250,23 @@ router.get('/stats', (req, res) => {
 router.post('/reset', (req, res) => {
   try {
     const sessionId = req.sessionID;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+    
     sessionManager.deleteSession(sessionId);
     const newSession = sessionManager.createSession(sessionId);
+    
+    if (!newSession) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create new session'
+      });
+    }
     
     res.json({
       success: true,
@@ -199,6 +274,7 @@ router.post('/reset', (req, res) => {
       sessionId: newSession.id
     });
   } catch (error) {
+    console.error('Reset quiz error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to reset quiz',
