@@ -31,7 +31,7 @@ function App() {
         setBackendStatus('offline');
         setApiReady(false);
         if (gameState === 'start') {
-          setError('Backend server is offline. Please ensure the server is running on http://localhost:5000');
+          setError('❌ Backend Server Offline - Expected at http://localhost:5000. Retrying automatically...');
         }
       }
     };
@@ -39,12 +39,11 @@ function App() {
     // Initial check
     checkAPI();
 
-    // Periodic checks (every 5 seconds)
+    // Periodic checks (every 5 seconds when on start screen, less frequent otherwise)
+    const checkInterval = gameState === 'start' ? 5000 : 15000;
     const healthCheckInterval = setInterval(() => {
-      if (gameState === 'start') {
-        checkAPI();
-      }
-    }, 5000);
+      checkAPI();
+    }, checkInterval);
 
     return () => clearInterval(healthCheckInterval);
   }, [gameState]);

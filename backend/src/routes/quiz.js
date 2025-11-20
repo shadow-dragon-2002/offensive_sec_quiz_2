@@ -81,7 +81,8 @@ router.get('/question', (req, res) => {
         message: 'Quiz completed!',
         isCompleted: true,
         finalScore: session.score,
-        correctAnswers: session.correctAnswers
+        correctAnswers: session.correctAnswers,
+        totalTime: session.endTime - session.startTime
       });
     }
 
@@ -89,8 +90,9 @@ router.get('/question', (req, res) => {
       sessionManager.lockSession(sessionId);
       return res.status(403).json({
         success: false,
-        message: 'Session has expired',
+        message: 'Session has expired. Time limit exceeded.',
         isLocked: true,
+        isExpired: true,
         finalScore: session.score
       });
     }
@@ -100,7 +102,7 @@ router.get('/question', (req, res) => {
     if (!currentQuestion) {
       return res.status(404).json({
         success: false,
-        message: 'Question not found'
+        message: 'Question not found for current level'
       });
     }
 
@@ -111,7 +113,9 @@ router.get('/question', (req, res) => {
       success: true,
       question: questionData,
       currentLevel: session.currentLevel,
-      totalQuestions: session.totalQuestions
+      totalQuestions: session.totalQuestions,
+      score: session.score,
+      correctAnswers: session.correctAnswers
     });
   } catch (error) {
     console.error('Get question error:', error);

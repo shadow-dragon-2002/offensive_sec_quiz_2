@@ -6,13 +6,18 @@
   "scripts": {
     "main": "node main.js",
     "start": "node main.js",
+    "launch": "node main.js",
+    "play": "node main.js",
+    "verify": "node verify-startup.js",
+    "diagnose": "node error-recovery.js 4",
+    "fix": "node error-recovery.js 2",
+    "kill-ports": "node error-recovery.js 3",
+    "reset": "node error-recovery.js 5 confirm",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm start",
-    "verify": "node backend/verify-startup.js",
-    "check": "node backend/check-config.js",
     "clean": "rm -rf backend/node_modules frontend/node_modules node_modules",
-    "setup": "npm run install:all && chmod +x launch.sh && chmod +x main.js"
+    "setup": "npm run install:all && chmod +x launch.sh main.js verify-startup.js error-recovery.js"
   },
   "repository": {
     "type": "git",
