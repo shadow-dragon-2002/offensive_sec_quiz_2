@@ -4,6 +4,55 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Glitch Effect Keyframes */
+@keyframes glitch {
+  0%, 100% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+}
+
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0.8;
+  }
+  43% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0.9;
+  }
+  46% {
+    opacity: 1;
+  }
+}
+
+@keyframes neonPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--cyber-blue), 0 0 10px var(--cyber-blue);
+  }
+  50% {
+    box-shadow: 0 0 10px var(--cyber-blue), 0 0 20px var(--cyber-blue), 0 0 30px var(--cyber-blue);
+  }
+}
+
 /* Loading State */
 .loading-container {
   display: flex;
@@ -172,6 +221,7 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  animation: flicker 5s infinite;
 }
 
 .answer-option::before {
@@ -194,6 +244,7 @@
   border-color: #00ff41;
   box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
   transform: translateX(5px);
+  animation: neonPulse 1s infinite, flicker 5s infinite;
 }
 
 .answer-option.selected {
@@ -246,14 +297,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   background: rgba(0, 255, 65, 0.2);
   border: 2px solid #00ff41;
   border-radius: 4px;
-  font-weight: 700;
+  font-weight: 900;
+  font-size: 1.2rem;
   font-family: 'Orbitron', sans-serif;
   flex-shrink: 0;
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3), inset 0 0 10px rgba(0, 255, 65, 0.2);
 }
 
 .answer-option.selected .option-letter {
@@ -273,7 +327,9 @@
 
 .option-text {
   flex: 1;
-  line-height: 1.4;
+  line-height: 1.5;
+  padding-left: 1rem;
+  font-weight: 400;
 }
 
 /* Feedback */

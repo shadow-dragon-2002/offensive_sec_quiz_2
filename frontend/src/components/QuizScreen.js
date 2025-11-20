@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './QuizScreen.css';
 import api, { withHealthCheck } from '../utils/api';
+import audioManager from '../utils/audioManager';
 
 function QuizScreen({ onComplete, onSessionLocked }) {
   const [question, setQuestion] = useState(null);
@@ -15,7 +16,15 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const MAX_RETRIES = 3;
 
   useEffect(() => {
+    // Initialize audio on mount
+    audioManager.init();
+    audioManager.playDigitalHum();
     fetchQuestion();
+    
+    return () => {
+      // Cleanup on unmount
+      audioManager.stopAmbient();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -44,6 +53,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           setSelectedAnswer(null);
           setFeedback(null);
           setRetryCount(0); // Reset retry count on success
+          audioManager.playGlitch(); // Play sound when question loads
         }
       } else {
         setError('Failed to load question: ' + response.data.message);
@@ -82,6 +92,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const handleAnswerSelect = (index) => {
     if (!isSubmitting && !feedback) {
       setSelectedAnswer(index);
+      audioManager.playButtonClick();
     }
   };
 
@@ -111,6 +122,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         });
 
         if (response.data.isCorrect) {
+          audioManager.playCorrectAnswer(); // Play success sound
+          audioManager.playLaserSwoosh(); // Add laser effect
           setTimeout(() => {
             if (response.data.isCompleted) {
               onComplete({
@@ -123,6 +136,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
             }
           }, 2000);
         } else if (response.data.isLocked) {
+          audioManager.playWrongAnswer(); // Play error sound
           setTimeout(() => {
             onSessionLocked({
               score: response.data.score,
@@ -130,6 +144,9 @@ function QuizScreen({ onComplete, onSessionLocked }) {
               locked: true
             });
           }, 2000);
+        } else {
+          // Wrong but not locked - play penalty sound
+          audioManager.playWrongAnswer();
         }
       } else {
         setError('Failed to submit answer: ' + response.data.message);
@@ -236,6 +253,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
                   feedback && selectedAnswer === index && !feedback.isCorrect ? 'incorrect' : ''
                 }`}
                 onClick={() => handleAnswerSelect(index)}
+                onMouseEnter={() => !feedback && audioManager.playButtonHover()}
                 disabled={isSubmitting || feedback}
                 whileHover={{ scale: feedback ? 1 : 1.02 }}
                 whileTap={{ scale: feedback ? 1 : 0.98 }}
