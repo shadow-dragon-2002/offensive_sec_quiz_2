@@ -335,16 +335,29 @@ async function checkDependencies() {
     try {
       const pkgContent = fs.readFileSync(backendPackageJson, 'utf8');
       const pkg = JSON.parse(pkgContent);
-      const requiredPackages = ['express', 'express-session', 'cors'];
+      const requiredPackages = ['express', 'express-session', 'cors', 'debug'];
       for (const pkg_name of requiredPackages) {
         const pkgPath = path.join(backendNodeModules, pkg_name);
         if (!fs.existsSync(pkgPath)) {
           backendNeedsInstall = true;
+          logger.debug(`Missing package: ${pkg_name}`);
           break;
+        }
+        // Check if package.json is valid (can be corrupted)
+        const pkgJsonPath = path.join(pkgPath, 'package.json');
+        if (fs.existsSync(pkgJsonPath)) {
+          try {
+            fs.readFileSync(pkgJsonPath, 'utf8');
+          } catch (err) {
+            backendNeedsInstall = true;
+            logger.debug(`Corrupted package.json in ${pkg_name}`);
+            break;
+          }
         }
       }
     } catch (err) {
       logger.debug('Could not check backend packages:', err.message);
+      backendNeedsInstall = true;
     }
   }
 
@@ -398,16 +411,29 @@ async function checkDependencies() {
     try {
       const pkgContent = fs.readFileSync(frontendPackageJson, 'utf8');
       const pkg = JSON.parse(pkgContent);
-      const requiredPackages = ['react', 'react-dom'];
+      const requiredPackages = ['react', 'react-dom', 'axios'];
       for (const pkg_name of requiredPackages) {
         const pkgPath = path.join(frontendNodeModules, pkg_name);
         if (!fs.existsSync(pkgPath)) {
           frontendNeedsInstall = true;
+          logger.debug(`Missing package: ${pkg_name}`);
           break;
+        }
+        // Check if package.json is valid (can be corrupted)
+        const pkgJsonPath = path.join(pkgPath, 'package.json');
+        if (fs.existsSync(pkgJsonPath)) {
+          try {
+            fs.readFileSync(pkgJsonPath, 'utf8');
+          } catch (err) {
+            frontendNeedsInstall = true;
+            logger.debug(`Corrupted package.json in ${pkg_name}`);
+            break;
+          }
         }
       }
     } catch (err) {
       logger.debug('Could not check frontend packages:', err.message);
+      frontendNeedsInstall = true;
     }
   }
 
