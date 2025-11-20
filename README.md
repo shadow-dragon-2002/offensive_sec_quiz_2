@@ -98,7 +98,41 @@ backend/
 - Ports 5000 and 3000 available
 - Modern web browser
 
-### Option 1: Fastest Setup 🚀
+### Option 1: Single Command Launch (Recommended) 🚀
+```bash
+./start.sh
+```
+
+**What it does automatically:**
+- ✅ Checks Node.js and npm installation
+- ✅ Validates directory structure
+- ✅ Installs dependencies (backend & frontend)
+- ✅ Creates `.env` configuration file
+- ✅ Checks port availability and resolves conflicts
+- ✅ Starts backend server with health checks
+- ✅ Starts frontend with environment variables
+- ✅ Monitors both services during execution
+- ✅ Displays success banner with access URLs
+- ✅ Handles graceful shutdown with Ctrl+C
+
+**Output Example:**
+```
+╔════════════════════════════════════════════════════════════╗
+║                    CYBER ESCAPE ROOM                       ║
+║              Starting Mission Control System...             ║
+╚════════════════════════════════════════════════════════════╝
+
+✓ Prerequisites verified
+✓ Dependencies installed
+✓ Configuration ready
+✓ Backend started (http://localhost:5000)
+✓ Frontend starting (http://localhost:3000)
+✓ All systems online
+
+🎮 Access the game at: http://localhost:3000
+```
+
+### Option 2: Manual Setup (For Development)
 ```bash
 bash setup.sh
 cd backend && npm start &
@@ -385,6 +419,52 @@ npm run build
 - [ ] Time attack mode
 - [ ] Custom quiz creation
 - [ ] Question difficulty voting
+
+## 🛠️ Error Handling & Recovery
+
+### Backend Error Handling
+The backend automatically handles:
+- **Network Errors**: Graceful recovery with detailed error messages
+- **Session Errors**: Validates and cleans up sessions on shutdown
+- **Uncaught Exceptions**: Logs errors and prevents crashes
+- **Unhandled Rejections**: Catches promise rejections with stack traces
+- **Port Conflicts**: Server detects EADDRINUSE and provides guidance
+- **SIGTERM/SIGINT**: Graceful shutdown with session cleanup (10-second timeout)
+
+### Frontend Error Recovery
+The frontend includes:
+- **Retry Logic**: Automatic retry with exponential backoff (1s, 2s, 3s)
+- **Health Checks**: Validates backend connectivity before operations
+- **Request Correlation**: Tracks requests with unique IDs and timing metadata
+- **Error Categorization**: 
+  - `NETWORK_ERROR`: Connection failures
+  - `API_ERROR`: Server returned error status
+  - `REQUEST_ERROR`: Request setup issues
+  - `REQUEST_SETUP_ERROR`: Configuration problems
+- **Smart Retries**: Only retries on transient failures (5xx, network errors, 429, 503)
+- **Backend Status Monitoring**: Real-time indicator showing backend online/offline/checking
+
+### Launcher Error Handling
+The `start.sh` script ensures:
+- ✅ Prerequisites checking (Node.js, npm, curl)
+- ✅ Directory structure validation
+- ✅ Automatic dependency installation with progress feedback
+- ✅ Port availability checking with auto-kill option for conflicts
+- ✅ Backend health verification (30 retry attempts × 1s intervals)
+- ✅ Frontend compilation monitoring (60 retry attempts)
+- ✅ Process health monitoring during runtime
+- ✅ Graceful cleanup on shutdown (SIGINT/SIGTERM)
+- ✅ Comprehensive error logging to `cyber_escape_room.log`
+
+### Configuration Auto-Generation
+If `.env` is missing, the launcher automatically creates one with:
+```env
+SESSION_SECRET=generated-random-secret
+CORS_ORIGIN=http://localhost:3000
+LOG_LEVEL=info
+PORT=5000
+FRONTEND_URL=http://localhost:3000
+```
 
 ## 🛠️ Troubleshooting
 

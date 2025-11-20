@@ -150,6 +150,31 @@ class SessionManager {
       }
     }
   }
+
+  cleanupAllSessions() {
+    const count = this.sessions.size;
+    this.sessions.clear();
+    return count;
+  }
+
+  getActiveSessionCount() {
+    return this.sessions.size;
+  }
+
+  validateSession(sessionId) {
+    if (!sessionId || typeof sessionId !== 'string') {
+      return false;
+    }
+    return this.sessions.has(sessionId);
+  }
+
+  getSessionHealth() {
+    return {
+      activeSessions: this.sessions.size,
+      totalSessions: this.sessions.size,
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
 module.exports = new SessionManager();

@@ -13,25 +13,40 @@ function App() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState(null);
   const [apiReady, setApiReady] = useState(false);
+  const [backendStatus, setBackendStatus] = useState('checking'); // checking, online, offline
 
-  // Check API availability on component mount
+  // Check API availability on component mount and periodically
   useEffect(() => {
     const checkAPI = async () => {
       try {
         const response = await api.get('/health');
         if (response.data && response.data.status === 'ok') {
           setApiReady(true);
+          setBackendStatus('online');
           setError(null);
         }
       } catch (err) {
         console.error('API Health Check Failed:', err);
-        setError('Failed to connect to backend. Please ensure the server is running on http://localhost:5000');
+        setBackendStatus('offline');
         setApiReady(false);
+        if (gameState === 'start') {
+          setError('Backend server is offline. Please ensure the server is running on http://localhost:5000');
+        }
       }
     };
 
+    // Initial check
     checkAPI();
-  }, []);
+
+    // Periodic checks (every 5 seconds)
+    const healthCheckInterval = setInterval(() => {
+      if (gameState === 'start') {
+        checkAPI();
+      }
+    }, 5000);
+
+    return () => clearInterval(healthCheckInterval);
+  }, [gameState]);
 
   const startQuiz = async () => {
     try {
@@ -182,7 +197,25 @@ function App() {
       </main>
 
       <footer className="app-footer">
-        <p>SYSTEM v2.0.77 // NEURAL NETWORK ACTIVE // TIMESTAMP: {new Date().toISOString()}</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <p>SYSTEM v2.0.77 // NEURAL NETWORK ACTIVE // TIMESTAMP: {new Date().toISOString()}</p>
+          <div className="backend-status" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            fontSize: '0.9em'
+          }}>
+            <span style={{
+              display: 'inline-block',
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: backendStatus === 'online' ? '#00ff00' : backendStatus === 'checking' ? '#ffaa00' : '#ff0000',
+              animation: backendStatus === 'checking' ? 'pulse 1s infinite' : 'none'
+            }} />
+            <span>{backendStatus === 'online' ? 'BACKEND ONLINE' : backendStatus === 'checking' ? 'CHECKING...' : 'BACKEND OFFLINE'}</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

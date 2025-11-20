@@ -490,6 +490,30 @@ body {
   }
 }
 
+/* Backend Status Indicator */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.backend-status {
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 2px;
+  color: var(--cyber-green);
+  text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.backend-status[style*="--bg"] {
+  animation: pulse 1s infinite;
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   *,

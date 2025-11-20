@@ -1,8 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import './StartScreen.css';
+import { healthCheck } from '../utils/api';
 
 function StartScreen({ onStart }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleStart = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Check backend health first
+      const isHealthy = await healthCheck();
+      if (!isHealthy) {
+        setError('Backend server is not responding. Please ensure it is running.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Call the onStart prop
+      await onStart();
+    } catch (err) {
+      console.error('[StartScreen] Error starting quiz:', err);
+      setError('Failed to start quiz. Please try again or refresh the page.');
+      setIsLoading(false);
+    }
+  };
   return (
     <div className="start-screen">
       <motion.div 
@@ -91,11 +116,32 @@ function StartScreen({ onStart }) {
             transition={{ delay: 1.2, duration: 0.5 }}
             style={{ textAlign: 'center', marginTop: '3rem' }}
           >
+            {error && (
+              <div style={{
+                background: 'rgba(255, 0, 110, 0.1)',
+                border: '2px solid #ff006e',
+                borderRadius: '4px',
+                padding: '1rem',
+                marginBottom: '1rem',
+                color: '#ff006e',
+                fontFamily: "'Share Tech Mono', monospace"
+              }}>
+                <p><span className="error-text">ERROR:</span> {error}</p>
+              </div>
+            )}
             <p className="terminal-text" style={{ marginBottom: '1.5rem' }}>
               <span className="info-text">[STATUS]</span> System ready. Awaiting authorization...
             </p>
-            <button className="neon-button" onClick={onStart}>
-              INITIATE MISSION
+            <button 
+              className="neon-button" 
+              onClick={handleStart}
+              disabled={isLoading}
+              style={{
+                opacity: isLoading ? 0.6 : 1,
+                cursor: isLoading ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isLoading ? 'INITIATING...' : 'INITIATE MISSION'}
             </button>
           </motion.div>
         </div>

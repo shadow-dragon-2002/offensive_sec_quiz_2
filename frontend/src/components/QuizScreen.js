@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './QuizScreen.css';
-import api from '../utils/api';
+import api, { withHealthCheck } from '../utils/api';
 
 function QuizScreen({ onComplete, onSessionLocked }) {
   const [question, setQuestion] = useState(null);
@@ -11,6 +11,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const [stats, setStats] = useState({ currentLevel: 1, score: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   useEffect(() => {
     fetchQuestion();
@@ -21,7 +23,10 @@ function QuizScreen({ onComplete, onSessionLocked }) {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/quiz/question');
+      
+      const response = await withHealthCheck(async () => {
+        return await api.get('/quiz/question');
+      });
       
       if (response.data.success) {
         if (response.data.isCompleted) {
@@ -38,23 +43,37 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           });
           setSelectedAnswer(null);
           setFeedback(null);
+          setRetryCount(0); // Reset retry count on success
         }
       } else {
         setError('Failed to load question: ' + response.data.message);
       }
     } catch (err) {
+      console.error('[QuizScreen] Error fetching question:', err);
+      
       if (err.response?.data?.isLocked) {
         onSessionLocked({
           score: err.response.data.finalScore || 0,
           correctAnswers: err.response.data.correctAnswers || 0,
           locked: true
         });
-      } else if (err.response?.status === 404) {
-        setError('Session not found. Please start a new quiz.');
-      } else {
-        console.error('Failed to fetch question:', err);
-        setError('Failed to load question. Please check your connection.');
+        return;
       }
+      
+      // Enhanced error handling
+      let errorMessage = 'Failed to load question. ';
+      
+      if (err.type === 'NETWORK_ERROR') {
+        errorMessage += 'Please check your connection.';
+      } else if (err.type === 'API_ERROR') {
+        errorMessage += err.message;
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Session not found. Please start a new quiz.';
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -71,9 +90,11 @@ function QuizScreen({ onComplete, onSessionLocked }) {
 
     setIsSubmitting(true);
     try {
-      const response = await api.post('/quiz/answer', {
-        questionId: question.id,
-        selectedAnswer: selectedAnswer
+      const response = await withHealthCheck(async () => {
+        return await api.post('/quiz/answer', {
+          questionId: question.id,
+          selectedAnswer: selectedAnswer
+        });
       });
 
       if (response.data.success) {
@@ -114,11 +135,23 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         setError('Failed to submit answer: ' + response.data.message);
       }
     } catch (err) {
-      console.error('Failed to submit answer:', err);
-      setError('Error submitting answer. Please try again.');
+      console.error('[QuizScreen] Error submitting answer:', err);
+      
+      let errorMessage = 'Error submitting answer. ';
+      
+      if (err.type === 'NETWORK_ERROR') {
+        errorMessage += 'Please check your connection and try again.';
+        setRetryCount(prev => prev + 1);
+      } else if (err.type === 'API_ERROR') {
+        errorMessage += err.message;
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      setError(errorMessage);
       setFeedback({
         isCorrect: false,
-        message: 'Failed to submit answer. Please try again.'
+        message: errorMessage
       });
     } finally {
       setIsSubmitting(false);

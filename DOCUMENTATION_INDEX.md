@@ -2,41 +2,88 @@
 
 ## 📚 Complete Documentation Guide
 
-This is your comprehensive guide to all documentation for the Offensive Security Quiz project.
+This is your comprehensive guide to all documentation for the Offensive Security Escape Room project.
+
+---
+
+## 🚀 QUICK START - READ THIS FIRST!
+
+### ⭐ [PRODUCTION_MASTER_GUIDE.md](./PRODUCTION_MASTER_GUIDE.md) ← START HERE!
+The complete one-page guide to running everything:
+- One-command startup: `./start.sh`
+- How to play the game
+- Error handling overview
+- Troubleshooting quick answers
+- 10-minute read, covers 95% of needs
+
+---
+
+## 📖 Documentation by Purpose
+
+### For Players/Users
+| Document | Purpose | Time |
+|----------|---------|------|
+| **[PRODUCTION_MASTER_GUIDE.md](./PRODUCTION_MASTER_GUIDE.md)** | How to play and run the game | 10 min |
+| **[README.md](./README.md)** | Project overview and features | 5 min |
+| **[QUICK_START.md](./QUICK_START.md)** | Step-by-step setup | 5 min |
+
+### For Developers/Maintainers
+| Document | Purpose | Time |
+|----------|---------|------|
+| **[FINAL_IMPROVEMENTS.md](./FINAL_IMPROVEMENTS.md)** | All enhancements made (MUST READ) | 15 min |
+| **[IMPLEMENTATION_VERIFICATION.md](./IMPLEMENTATION_VERIFICATION.md)** | Verification checklist | 10 min |
+| **[ARCHITECTURE.md](./ARCHITECTURE.md)** | System design and data models | 10 min |
+| **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** | Error solutions with code examples | 15 min |
+
+### For System Operators
+| Document | Purpose | Time |
+|----------|---------|------|
+| **[DEPLOYMENT.md](./DEPLOYMENT.md)** | Production deployment | 10 min |
+| **[INSTALLATION_CHECKLIST.md](./INSTALLATION_CHECKLIST.md)** | Pre-deployment verification | 5 min |
+| **[LAUNCH_README.md](./LAUNCH_README.md)** | Launcher script details | 5 min |
 
 ---
 
 ## 🚀 Getting Started (Start Here!)
 
 ### For First-Time Users
-1. **[QUICK_START.md](./QUICK_START.md)** ⭐ START HERE
-   - 5-minute setup instructions
-   - Docker quick start
-   - Common troubleshooting
-   - API endpoints reference
+1. **[PRODUCTION_MASTER_GUIDE.md](./PRODUCTION_MASTER_GUIDE.md)** ← START HERE
+   - One-command startup
+   - How to play
+   - Error handling
+   - Customization
+   - All you need!
 
 2. **[README.md](./README.md)**
    - Full project overview
    - Features list
    - Architecture details
    - Data models
-   - Customization guide
 
 ---
 
 ## 🔧 Installation & Setup
 
-### Setup Guides
-- **[QUICK_START.md](./QUICK_START.md)** - Fastest way to get running
-- **[INSTALLATION_CHECKLIST.md](./INSTALLATION_CHECKLIST.md)** - Verify your setup is correct
+### Fastest Way (Recommended)
+```bash
+./start.sh
+```
+Everything is automatic! See [PRODUCTION_MASTER_GUIDE.md](./PRODUCTION_MASTER_GUIDE.md)
+
+### Manual Setup
+Follow [QUICK_START.md](./QUICK_START.md) for step-by-step instructions
+
+### Verification
+Run [INSTALLATION_CHECKLIST.md](./INSTALLATION_CHECKLIST.md) to verify setup
 
 ### Automated Scripts
-- `setup.sh` - One-command installation
-- `start.sh` - Easy server startup
+- `start.sh` - **USE THIS** (main launcher)
+- `setup.sh` - Alternative setup
 - `validate.sh` - Environment verification
+- `launch.sh` - Legacy launcher
 
-### Configuration
-- `backend/.env` - Backend environment variables
+### Configuration Files
+- `.env` - Environment variables (auto-created)
 - `docker-compose.yml` - Docker container setup
 - `backend/Dockerfile` - Backend containerization
 - `frontend/Dockerfile` - Frontend containerization
@@ -45,8 +92,8 @@ This is your comprehensive guide to all documentation for the Offensive Security
 
 ## 🆘 Troubleshooting & Help
 
-### Main Resources
-- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues with solutions
+### Main Resource
+**[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues with solutions:
   - Port conflicts (5000, 3000)
   - CORS errors
   - Session issues

@@ -158,15 +158,51 @@ const server = app.listen(PORT, () => {
 // Handle server errors
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Error: Port ${PORT} is already in use`);
+    console.error(`\n❌ Error: Port ${PORT} is already in use`);
     console.error('Please either:');
     console.error(`  1. Stop the process using port ${PORT}`);
     console.error('  2. Change the PORT in .env file');
+    console.error('  3. Use: lsof -ti:' + PORT + ' | xargs kill -9\n');
     process.exit(1);
   } else {
     console.error('Server error:', err);
     process.exit(1);
   }
 });
+
+// Uncaught exception handler
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  console.error('Stack:', err.stack);
+  process.exit(1);
+});
+
+// Unhandled rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Graceful shutdown with cleanup
+const gracefulShutdown = () => {
+  console.log('\n\n🛑 Graceful shutdown initiated...');
+  clearInterval(cleanupInterval);
+  
+  server.close(() => {
+    console.log('✓ HTTP server closed');
+    sessionManager.cleanupAllSessions?.();
+    console.log('✓ All sessions cleaned up');
+    process.exit(0);
+  });
+
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Force shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 module.exports = app;
