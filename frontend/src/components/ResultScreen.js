@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import './ResultScreen.css';
 
 function ResultScreen({ stats, onRestart }) {
@@ -46,45 +47,90 @@ function ResultScreen({ stats, onRestart }) {
 
   return (
     <div className="result-screen">
-      <div className={`result-container ${result.class}`}>
+      <motion.div 
+        className={`result-container ${result.class}`}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="terminal-window result-terminal">
           <div className="terminal-header">
             <span className="terminal-button red"></span>
             <span className="terminal-button yellow"></span>
             <span className="terminal-button green"></span>
-            <span className="terminal-title">challenge_result.log</span>
+            <span className="terminal-title">MISSION_RESULTS.log</span>
           </div>
           <div className="terminal-body">
-            <h1 className="result-title">{result.title}</h1>
-            <p className="result-message">{result.message}</p>
+            <motion.h1 
+              className="result-title"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {result.title}
+            </motion.h1>
+            <motion.p 
+              className="result-message"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              {result.message}
+            </motion.p>
 
-            <div className="stats-grid">
-              <div className="stat-card">
+            <motion.div 
+              className="stats-grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <motion.div 
+                className="stat-card"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.9, type: "spring" }}
+              >
                 <div className="stat-icon">💯</div>
                 <div className="stat-label">Final Score</div>
                 <div className="stat-number">{stats.score || 0}</div>
-              </div>
+              </motion.div>
 
-              <div className="stat-card">
+              <motion.div 
+                className="stat-card"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 1.0, type: "spring" }}
+              >
                 <div className="stat-icon">✓</div>
                 <div className="stat-label">Correct Answers</div>
                 <div className="stat-number">{stats.correctAnswers || 0}/30</div>
-              </div>
+              </motion.div>
 
-              <div className="stat-card">
+              <motion.div 
+                className="stat-card"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 1.1, type: "spring" }}
+              >
                 <div className="stat-icon">📊</div>
                 <div className="stat-label">Success Rate</div>
                 <div className="stat-number">{scorePercentage.toFixed(1)}%</div>
-              </div>
+              </motion.div>
 
-              <div className="stat-card rank-card" style={{ borderColor: rankInfo.color }}>
+              <motion.div 
+                className="stat-card rank-card" 
+                style={{ borderColor: rankInfo.color }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 1.2, type: "spring" }}
+              >
                 <div className="stat-icon">{rankInfo.icon}</div>
                 <div className="stat-label">Your Rank</div>
                 <div className="stat-number" style={{ color: rankInfo.color }}>
                   {rankInfo.rank}
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
             <div className="progress-visualization">
               <div className="progress-label">
@@ -131,11 +177,19 @@ function ResultScreen({ stats, onRestart }) {
           </div>
         </div>
 
-        <button className="restart-button neon-button" onClick={onRestart}>
-          <span className="button-text">START NEW CHALLENGE</span>
+        <motion.button 
+          className="restart-button neon-button" 
+          onClick={onRestart}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+        >
+          <span className="button-text">START NEW MISSION</span>
           <span className="button-icon">🔄</span>
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     </div>
   );
 }

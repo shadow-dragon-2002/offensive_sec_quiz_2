@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import './Timer.css';
 
 function Timer({ timeLimit, onTimeout }) {
@@ -33,20 +34,56 @@ function Timer({ timeLimit, onTimeout }) {
     return 'normal';
   };
 
+  const timerClass = getTimerClass();
+  
   return (
-    <div className={`timer-container ${getTimerClass()}`}>
+    <motion.div 
+      className={`timer-container ${timerClass}`}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        scale: timerClass === 'critical' ? [1, 1.05, 1] : 1
+      }}
+      transition={{ 
+        opacity: { duration: 0.5 },
+        scale: { repeat: timerClass === 'critical' ? Infinity : 0, duration: 0.5 }
+      }}
+    >
       <div className="timer-icon">⏱️</div>
       <div className="timer-display">
-        <div className="timer-label">Time Remaining</div>
-        <div className="timer-value">{formatTime(timeRemaining)}</div>
+        <div className="timer-label">MISSION TIMER</div>
+        <motion.div 
+          className="timer-value"
+          animate={{ 
+            color: timerClass === 'critical' 
+              ? ['#ff006e', '#ffff00', '#ff006e'] 
+              : timerClass === 'warning'
+              ? '#ffa500'
+              : '#00f3ff'
+          }}
+          transition={{ duration: 0.5, repeat: timerClass === 'critical' ? Infinity : 0 }}
+        >
+          {formatTime(timeRemaining)}
+        </motion.div>
       </div>
       <div className="timer-bar">
-        <div 
+        <motion.div 
           className="timer-fill" 
           style={{ width: `${(timeRemaining / timeLimit) * 100}%` }}
-        ></div>
+          animate={{ 
+            boxShadow: timerClass === 'critical' 
+              ? [
+                  '0 0 10px rgba(255, 0, 110, 0.8)',
+                  '0 0 20px rgba(255, 0, 110, 1)',
+                  '0 0 10px rgba(255, 0, 110, 0.8)'
+                ]
+              : '0 0 10px rgba(0, 243, 255, 0.5)'
+          }}
+          transition={{ duration: 0.5, repeat: timerClass === 'critical' ? Infinity : 0 }}
+        />
       </div>
-    </div>
+    </motion.div>
   );
 }
 

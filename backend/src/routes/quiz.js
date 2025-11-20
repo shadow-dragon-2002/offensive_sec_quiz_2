@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sessionManager = require('../models/Session');
-const questions = require('../data/questions');
+const questions = require('../data/escapeRoomQuestions');
 
 // Start a new quiz session
 router.post('/start', (req, res) => {
@@ -141,14 +141,15 @@ router.post('/answer', (req, res) => {
     res.json({
       success: true,
       isCorrect: result.isCorrect,
-      correctAnswer: question.correctAnswer,
       currentLevel: result.currentLevel,
       score: result.score,
-      isLocked: result.isLocked,
+      isLocked: false,
       isCompleted: result.isCompleted,
+      penalty: result.penalty,
+      wrongAttempts: result.wrongAttempts,
       message: result.isCorrect 
-        ? 'Correct! Moving to next level.' 
-        : 'Incorrect. Session locked.'
+        ? 'ACCESS GRANTED - Proceeding to next sector...' 
+        : 'ACCESS DENIED - Security breach detected. Point penalty applied.'
     });
   } catch (error) {
     res.status(500).json({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import './QuizScreen.css';
 import api from '../utils/api';
 
@@ -184,33 +185,53 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         <h2 className="question-text">{question.question}</h2>
 
         <div className="answers-grid">
-          {question.options && question.options.map((option, index) => (
-            <button
-              key={index}
-              className={`answer-option ${
-                selectedAnswer === index ? 'selected' : ''
-              } ${
-                feedback && index === feedback.correctAnswer ? 'correct' : ''
-              } ${
-                feedback && selectedAnswer === index && !feedback.isCorrect ? 'incorrect' : ''
-              }`}
-              onClick={() => handleAnswerSelect(index)}
-              disabled={isSubmitting || feedback}
-            >
-              <span className="option-letter">{String.fromCharCode(65 + index)}</span>
-              <span className="option-text">{option}</span>
-            </button>
-          ))}
+          {question.options && question.options.map((option, index) => {
+            // Extract label if option starts with a), b), c), d)
+            const optionLabel = ['a)', 'b)', 'c)', 'd)'][index];
+            const displayText = option.startsWith(optionLabel) 
+              ? option.substring(2).trim() 
+              : option;
+
+            return (
+              <motion.button
+                key={index}
+                className={`answer-option ${
+                  selectedAnswer === index ? 'selected' : ''
+                } ${
+                  feedback && index === feedback.correctAnswer ? 'correct' : ''
+                } ${
+                  feedback && selectedAnswer === index && !feedback.isCorrect ? 'incorrect' : ''
+                }`}
+                onClick={() => handleAnswerSelect(index)}
+                disabled={isSubmitting || feedback}
+                whileHover={{ scale: feedback ? 1 : 1.02 }}
+                whileTap={{ scale: feedback ? 1 : 0.98 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <span className="option-letter">{optionLabel}</span>
+                <span className="option-text">{displayText}</span>
+              </motion.button>
+            );
+          })}
         </div>
 
-        {feedback && (
-          <div className={`feedback ${feedback.isCorrect ? 'correct' : 'incorrect'}`}>
-            <div className="feedback-icon">
-              {feedback.isCorrect ? '✓' : '✗'}
-            </div>
-            <div className="feedback-message">{feedback.message}</div>
-          </div>
-        )}
+        <AnimatePresence>
+          {feedback && (
+            <motion.div 
+              className={`feedback ${feedback.isCorrect ? 'correct' : 'incorrect'}`}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+            >
+              <div className="feedback-icon">
+                {feedback.isCorrect ? '✓' : '✗'}
+              </div>
+              <div className="feedback-message">{feedback.message}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <button
           className="submit-button neon-button"

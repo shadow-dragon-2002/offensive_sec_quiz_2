@@ -1,0 +1,28 @@
+{
+  "name": "cyber-escape-room",
+  "version": "2.0.77",
+  "description": "Cyberpunk-themed Offensive Security Escape Room",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start",
+    "start": "echo '⚠️  Please run ./launch.sh for the best experience' && echo 'Or manually: npm run start:backend (in one terminal) and npm run start:frontend (in another terminal)'",
+    "clean": "rm -rf backend/node_modules frontend/node_modules node_modules",
+    "setup": "npm run install:all && chmod +x launch.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/offensive-sec-quiz-2.git"
+  },
+  "keywords": [
+    "cybersecurity",
+    "offensive-security",
+    "escape-room",
+    "cyberpunk",
+    "quiz",
+    "educational"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

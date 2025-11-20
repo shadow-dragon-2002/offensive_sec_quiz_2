@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import { motion, AnimatePresence } from 'framer-motion';
+import './CyberpunkApp.css';
 import StartScreen from './components/StartScreen';
 import QuizScreen from './components/QuizScreen';
 import ResultScreen from './components/ResultScreen';
@@ -81,14 +82,29 @@ function App() {
 
   return (
     <div className="App">
-      <div className="cyberpunk-bg"></div>
-      <div className="grid-overlay"></div>
+      {/* Animated Background Layers */}
+      <div className="cyberpunk-bg" />
+      <div className="grid-overlay" />
+      <div className="scanline" />
       
       <header className="app-header">
-        <h1 className="neon-title">
-          <span className="glitch" data-text="OFFENSIVE SECURITY">OFFENSIVE SECURITY</span>
-        </h1>
-        <p className="subtitle">Cybersecurity Challenge Arena</p>
+        <motion.h1 
+          className="neon-title glitch" 
+          data-text="CYBER ESCAPE ROOM"
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        >
+          CYBER ESCAPE ROOM
+        </motion.h1>
+        <motion.p 
+          className="subtitle"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1 }}
+        >
+          OFFENSIVE SECURITY CHALLENGE
+        </motion.p>
       </header>
 
       {gameState === 'playing' && sessionData && (
@@ -104,38 +120,69 @@ function App() {
 
       <main className="main-content">
         {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠️</span>
-            {error}
+          <motion.div 
+            className="error-message"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <span className="error-icon">⚠</span>
+            <span className="error-text">SYSTEM ERROR:</span> {error}
             {!apiReady && (
-              <p style={{ fontSize: '0.9em', marginTop: '10px' }}>
-                Backend is expected at: http://localhost:5000
+              <p style={{ fontSize: '0.85em', marginTop: '10px', fontFamily: 'Share Tech Mono, monospace' }}>
+                <span className="prompt">$</span> Backend expected at: http://localhost:5000
               </p>
             )}
-          </div>
+          </motion.div>
         )}
         
-        {gameState === 'start' && (
-          <StartScreen onStart={startQuiz} />
-        )}
-        
-        {gameState === 'playing' && (
-          <QuizScreen 
-            onComplete={handleQuizComplete}
-            onSessionLocked={handleSessionLocked}
-          />
-        )}
-        
-        {gameState === 'result' && (
-          <ResultScreen 
-            stats={stats}
-            onRestart={resetQuiz}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {gameState === 'start' && (
+            <motion.div
+              key="start"
+              initial={{ opacity: 0, x: -100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ duration: 0.5 }}
+            >
+              <StartScreen onStart={startQuiz} />
+            </motion.div>
+          )}
+          
+          {gameState === 'playing' && (
+            <motion.div
+              key="quiz"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.5 }}
+            >
+              <QuizScreen 
+                onComplete={handleQuizComplete}
+                onSessionLocked={handleSessionLocked}
+              />
+            </motion.div>
+          )}
+          
+          {gameState === 'result' && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -100 }}
+              transition={{ duration: 0.5 }}
+            >
+              <ResultScreen 
+                stats={stats}
+                onRestart={resetQuiz}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
       <footer className="app-footer">
-        <p>© 2024 Offensive Security Quiz | Educational Purpose Only</p>
+        <p>SYSTEM v2.0.77 // NEURAL NETWORK ACTIVE // TIMESTAMP: {new Date().toISOString()}</p>
       </footer>
     </div>
   );

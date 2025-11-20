@@ -9,7 +9,7 @@ class SessionManager {
     const session = {
       id: sessionId,
       currentLevel: 1,
-      score: 0,
+      score: 1000, // Start with 1000 points
       answers: [],
       startTime: Date.now(),
       endTime: null,
@@ -17,7 +17,9 @@ class SessionManager {
       isLocked: false,
       correctAnswers: 0,
       totalQuestions: 30,
-      timeLimit: 30 * 60 * 1000, // 30 minutes in milliseconds
+      timeLimit: 25 * 60 * 1000, // 25 minutes for escape room
+      wrongAttempts: 0,
+      canProgress: true, // Always allow progression
     };
     
     this.sessions.set(sessionId, session);
@@ -58,33 +60,40 @@ class SessionManager {
 
   submitAnswer(sessionId, questionId, selectedAnswer, correctAnswer, points) {
     const session = this.sessions.get(sessionId);
-    if (!session || session.isLocked || session.isCompleted) {
-      return { success: false, message: 'Session is locked or completed' };
+    if (!session || session.isCompleted) {
+      return { success: false, message: 'Session is completed' };
     }
 
     if (this.isSessionExpired(sessionId)) {
-      this.lockSession(sessionId);
-      return { success: false, message: 'Session has expired' };
+      session.isCompleted = true;
+      session.endTime = Date.now();
+      this.sessions.set(sessionId, session);
+      return { success: false, message: 'Time expired', timeExpired: true };
     }
 
     const isCorrect = selectedAnswer === correctAnswer;
+    const penalty = isCorrect ? 0 : 50; // 50 point penalty for wrong answer
+    
     const answer = {
       questionId,
       selectedAnswer,
       isCorrect,
-      points: isCorrect ? points : 0,
+      penalty: penalty,
       timestamp: Date.now()
     };
 
     session.answers.push(answer);
     
     if (isCorrect) {
-      session.score += points;
+      // Correct answer - move to next level
       session.correctAnswers += 1;
       session.currentLevel += 1;
     } else {
-      // Lock session on wrong answer (session-locked progressive challenges)
-      session.isLocked = true;
+      // Wrong answer - apply penalty but allow progression
+      session.score = Math.max(0, session.score - penalty);
+      session.wrongAttempts += 1;
+      // DO NOT lock session - allow continuation
+      // DO NOT advance level - must answer correctly
     }
 
     // Check if completed all questions
@@ -100,8 +109,10 @@ class SessionManager {
       isCorrect,
       currentLevel: session.currentLevel,
       score: session.score,
-      isLocked: session.isLocked,
-      isCompleted: session.isCompleted
+      isLocked: false, // Never lock in escape room mode
+      isCompleted: session.isCompleted,
+      penalty: penalty,
+      wrongAttempts: session.wrongAttempts
     };
   }
 
