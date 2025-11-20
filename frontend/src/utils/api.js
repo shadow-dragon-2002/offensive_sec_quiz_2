@@ -142,7 +142,7 @@ export const healthCheck = async () => {
 };
 
 // ============ RETRY WITH HEALTH CHECK ============
-export const withHealthCheck = async (fn) => {
+export const withHealthCheck = async (fn, context = 'API call') => {
   const maxAttempts = 3;
   let lastError = null;
   
@@ -152,9 +152,16 @@ export const withHealthCheck = async (fn) => {
     } catch (error) {
       lastError = error;
       
+      // Don't retry certain errors
+      if (error.type === 'REQUEST_SETUP_ERROR') {
+        throw error;
+      }
+      
       if (attempt < maxAttempts) {
-        console.warn(`[Attempt ${attempt}/${maxAttempts}] Retrying after error:`, error.message);
+        console.warn(`[Attempt ${attempt}/${maxAttempts}] ${context} failed, retrying:`, error.message);
         await sleep(RETRY_DELAY * attempt);
+      } else {
+        console.error(`[Final Attempt ${attempt}/${maxAttempts}] ${context} failed:`, error.message);
       }
     }
   }

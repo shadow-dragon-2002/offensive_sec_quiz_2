@@ -60,15 +60,37 @@ class SessionManager {
 
   submitAnswer(sessionId, questionId, selectedAnswer, correctAnswer, points) {
     const session = this.sessions.get(sessionId);
-    if (!session || session.isCompleted) {
-      return { success: false, message: 'Session is completed' };
+    if (!session) {
+      return { success: false, message: 'Session not found' };
+    }
+
+    if (session.isCompleted) {
+      return { 
+        success: true, 
+        message: 'Quiz already completed',
+        isCompleted: true,
+        isCorrect: false,
+        currentLevel: session.currentLevel,
+        score: session.score
+      };
     }
 
     if (this.isSessionExpired(sessionId)) {
       session.isCompleted = true;
       session.endTime = Date.now();
       this.sessions.set(sessionId, session);
-      return { success: false, message: 'Time expired', timeExpired: true };
+      return { 
+        success: false, 
+        message: 'Time expired', 
+        timeExpired: true,
+        isLocked: true,
+        isCompleted: true
+      };
+    }
+
+    // Validate inputs
+    if (selectedAnswer === undefined || selectedAnswer === null) {
+      return { success: false, message: 'Invalid answer provided' };
     }
 
     const isCorrect = selectedAnswer === correctAnswer;
@@ -96,7 +118,7 @@ class SessionManager {
       // DO NOT advance level - must answer correctly
     }
 
-    // Check if completed all questions
+    // Check if completed all questions (30 total)
     if (session.currentLevel > 30) {
       session.isCompleted = true;
       session.endTime = Date.now();

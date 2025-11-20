@@ -153,19 +153,23 @@ function sleep(ms) {
 
 function checkPortInUse(port) {
   return new Promise((resolve) => {
-    const server = require('net').createServer()
-      .once('error', (err) => {
-        if (err.code === 'EADDRINUSE') {
-          resolve(true);
-        } else {
-          resolve(false);
-        }
-      })
-      .once('listening', () => {
-        server.close();
+    const net = require('net');
+    const server = net.createServer();
+    
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(true);
+      } else {
         resolve(false);
-      })
-      .listen(port);
+      }
+    });
+    
+    server.once('listening', () => {
+      server.close();
+      resolve(false);
+    });
+    
+    server.listen(port, '127.0.0.1');
   });
 }
 
@@ -267,22 +271,54 @@ async function setupEnvironment() {
   const backendEnvPath = path.join(CONFIG.BACKEND_DIR, '.env');
   if (!fs.existsSync(backendEnvPath)) {
     logger.info('Creating backend .env file...');
-    const envContent = `PORT=${CONFIG.BACKEND_PORT}
+    const timestamp = Math.floor(Date.now() / 1000);
+    const envContent = `# Offensive Security Escape Room - Backend Configuration
 NODE_ENV=${CONFIG.NODE_ENV}
-SESSION_SECRET=offensive-sec-quiz-secret-$(date +%s)
+PORT=${CONFIG.BACKEND_PORT}
 FRONTEND_URL=http://localhost:${CONFIG.FRONTEND_PORT}
 CORS_ORIGIN=http://localhost:${CONFIG.FRONTEND_PORT}
+SESSION_SECRET=offensive-sec-quiz-secret-${timestamp}
 LOG_LEVEL=info
+SESSION_TIMEOUT=1500000
 `;
-    fs.writeFileSync(backendEnvPath, envContent);
-    logger.success('.env file created');
+    try {
+      fs.writeFileSync(backendEnvPath, envContent);
+      logger.success('.env file created for backend');
+    } catch (err) {
+      logger.error('Failed to create backend .env file:', err.message);
+      throw err;
+    }
   } else {
-    logger.info('.env file already exists');
+    logger.info('Backend .env file already exists');
+  }
+
+  // Create .env for frontend if missing (optional but helpful)
+  const frontendEnvPath = path.join(CONFIG.FRONTEND_DIR, '.env');
+  if (!fs.existsSync(frontendEnvPath)) {
+    logger.info('Creating frontend .env file...');
+    const envContent = `# Offensive Security Escape Room - Frontend Configuration
+REACT_APP_API_URL=http://localhost:${CONFIG.BACKEND_PORT}/api
+REACT_APP_API_BASE=http://localhost:${CONFIG.BACKEND_PORT}
+BROWSER=none
+`;
+    try {
+      fs.writeFileSync(frontendEnvPath, envContent);
+      logger.success('.env file created for frontend');
+    } catch (err) {
+      logger.debug('Optional: frontend .env creation failed:', err.message);
+    }
+  } else {
+    logger.info('Frontend .env file already exists');
   }
 
   // Ensure log file exists
-  if (!fs.existsSync(CONFIG.LOG_FILE)) {
-    fs.writeFileSync(CONFIG.LOG_FILE, '');
+  try {
+    if (!fs.existsSync(CONFIG.LOG_FILE)) {
+      fs.writeFileSync(CONFIG.LOG_FILE, '');
+      logger.success(`Log file created: ${CONFIG.LOG_FILE}`);
+    }
+  } catch (err) {
+    logger.warn('Failed to create log file:', err.message);
   }
 }
 
@@ -293,21 +329,37 @@ async function checkDependencies() {
   const backendNodeModules = path.join(CONFIG.BACKEND_DIR, 'node_modules');
   if (!fs.existsSync(backendNodeModules)) {
     logger.warn('Backend dependencies not installed. Installing...');
-    await new Promise((resolve) => {
-      const install = spawn('npm', ['install'], {
+    await new Promise((resolve, reject) => {
+      const install = spawn('npm', ['install', '--prefer-offline', '--no-audit'], {
         cwd: CONFIG.BACKEND_DIR,
         stdio: 'pipe',
+      });
+
+      let errorOutput = '';
+      install.stderr?.on('data', (data) => {
+        errorOutput += data.toString();
       });
 
       install.on('close', (code) => {
         if (code === 0) {
           logger.success('Backend dependencies installed');
+          resolve();
         } else {
           logger.error('Failed to install backend dependencies');
-          process.exit(1);
+          if (errorOutput) {
+            logger.debug('Install error details:', errorOutput.substring(0, 500));
+          }
+          reject(new Error('Backend npm install failed'));
         }
-        resolve();
       });
+
+      install.on('error', (err) => {
+        logger.error('Backend npm install error:', err.message);
+        reject(err);
+      });
+    }).catch(err => {
+      logger.error('Failed to install backend dependencies:', err.message);
+      process.exit(1);
     });
   } else {
     logger.success('Backend dependencies already installed');
@@ -317,21 +369,37 @@ async function checkDependencies() {
   const frontendNodeModules = path.join(CONFIG.FRONTEND_DIR, 'node_modules');
   if (!fs.existsSync(frontendNodeModules)) {
     logger.warn('Frontend dependencies not installed. Installing...');
-    await new Promise((resolve) => {
-      const install = spawn('npm', ['install'], {
+    await new Promise((resolve, reject) => {
+      const install = spawn('npm', ['install', '--prefer-offline', '--no-audit'], {
         cwd: CONFIG.FRONTEND_DIR,
         stdio: 'pipe',
+      });
+
+      let errorOutput = '';
+      install.stderr?.on('data', (data) => {
+        errorOutput += data.toString();
       });
 
       install.on('close', (code) => {
         if (code === 0) {
           logger.success('Frontend dependencies installed');
+          resolve();
         } else {
           logger.error('Failed to install frontend dependencies');
-          process.exit(1);
+          if (errorOutput) {
+            logger.debug('Install error details:', errorOutput.substring(0, 500));
+          }
+          reject(new Error('Frontend npm install failed'));
         }
-        resolve();
       });
+
+      install.on('error', (err) => {
+        logger.error('Frontend npm install error:', err.message);
+        reject(err);
+      });
+    }).catch(err => {
+      logger.error('Failed to install frontend dependencies:', err.message);
+      process.exit(1);
     });
   } else {
     logger.success('Frontend dependencies already installed');
@@ -385,41 +453,56 @@ class ProcessManager {
           ...process.env,
           PORT: CONFIG.BACKEND_PORT,
           NODE_ENV: CONFIG.NODE_ENV,
+          FRONTEND_URL: `http://localhost:${CONFIG.FRONTEND_PORT}`,
+          CORS_ORIGIN: `http://localhost:${CONFIG.FRONTEND_PORT}`,
         },
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
 
       this.processes.set('backend', backend);
 
       let isStarted = false;
+      let startTimeout;
+      let errorBuffer = '';
 
       backend.stdout?.on('data', (data) => {
         const output = data.toString();
-        if (!isStarted && output.includes('running on port')) {
+        process.stdout.write(output);
+        
+        if (!isStarted && (output.includes('running on port') || output.includes('listening'))) {
           isStarted = true;
-          logger.success(`Backend started (PID: ${backend.pid})`);
+          clearTimeout(startTimeout);
+          logger.success(`Backend started successfully (PID: ${backend.pid})`);
           resolve();
         }
       });
 
       backend.stderr?.on('data', (data) => {
-        logger.debug('Backend stderr:', data.toString().trim());
+        const output = data.toString();
+        errorBuffer += output;
+        logger.debug('Backend stderr:', output.trim());
       });
 
       backend.on('error', (err) => {
+        clearTimeout(startTimeout);
         logger.error('Failed to start backend:', err.message);
-        reject(err);
+        if (!isStarted) reject(err);
       });
 
-      backend.on('exit', (code) => {
-        if (code !== 0 && code !== null) {
-          logger.error(`Backend exited with code ${code}`);
+      backend.on('exit', (code, signal) => {
+        clearTimeout(startTimeout);
+        if (code !== 0 && code !== null && !this.isShuttingDown) {
+          logger.error(`Backend exited with code ${code} (signal: ${signal})`);
+          if (errorBuffer && !isStarted) {
+            logger.debug('Backend error details:', errorBuffer.substring(0, 500));
+          }
         }
       });
 
-      // Timeout if backend doesn't start
-      setTimeout(() => {
+      // Timeout handler
+      startTimeout = setTimeout(() => {
         if (!isStarted) {
-          logger.warn('Backend startup timeout. Continuing anyway...');
+          logger.warn('Backend startup timeout (15s). Continuing with monitoring...');
           resolve();
         }
       }, 15000);
@@ -437,18 +520,44 @@ class ProcessManager {
           ...process.env,
           PORT: CONFIG.FRONTEND_PORT,
           REACT_APP_API_URL: `http://localhost:${CONFIG.BACKEND_PORT}/api`,
+          REACT_APP_API_BASE: `http://localhost:${CONFIG.BACKEND_PORT}`,
           BROWSER: 'none',
+          SKIP_PREFLIGHT_CHECK: 'true',
+          CI: 'false',
         },
+        stdio: ['pipe', 'pipe', 'pipe'],
       });
 
       this.processes.set('frontend', frontend);
 
-      logger.success(`Frontend started (PID: ${frontend.pid})`);
+      logger.success(`Frontend process started (PID: ${frontend.pid})`);
+
+      let compiledSuccessfully = false;
+      let errorBuffer = '';
 
       frontend.stdout?.on('data', (data) => {
         const output = data.toString();
-        if (output.includes('Compiled successfully') || output.includes('webpack compiled')) {
+        
+        if (output.includes('Compiled successfully')) {
+          compiledSuccessfully = true;
           logger.success('Frontend compiled successfully');
+        }
+        
+        if (output.includes('webpack compiled with')) {
+          compiledSuccessfully = true;
+        }
+
+        // Log important messages but suppress verbose output
+        if (output.includes('ERROR') || output.includes('error')) {
+          logger.debug('Frontend output:', output.trim());
+        }
+      });
+
+      frontend.stderr?.on('data', (data) => {
+        const output = data.toString();
+        errorBuffer += output;
+        if (output.includes('error') || output.includes('Error')) {
+          logger.debug('Frontend error:', output.trim());
         }
       });
 
@@ -456,17 +565,21 @@ class ProcessManager {
         logger.error('Failed to start frontend:', err.message);
       });
 
-      frontend.on('exit', (code) => {
+      frontend.on('exit', (code, signal) => {
         if (code !== 0 && code !== null && !this.isShuttingDown) {
-          logger.warn(`Frontend exited with code ${code}`);
+          logger.warn(`Frontend exited with code ${code} (signal: ${signal})`);
         }
       });
 
-      // Frontend startup timeout
+      // Frontend startup timeout - longer for first build
       setTimeout(() => {
-        logger.success('Frontend startup timeout. Application may still be compiling.');
+        if (compiledSuccessfully) {
+          logger.success('Frontend is ready');
+        } else {
+          logger.info('Frontend compilation in progress. This may take a minute on first run...');
+        }
         resolve();
-      }, 20000);
+      }, 45000);
 
       resolve();
     });
@@ -495,14 +608,22 @@ class ProcessManager {
   }
 
   monitorProcesses() {
-    setInterval(() => {
+    // Check processes every 5 seconds
+    this.monitorInterval = setInterval(() => {
       for (const [name, proc] of this.processes) {
         if (proc && proc.killed) {
-          logger.warn(`${name} process has exited unexpectedly`);
-          // Could restart here if desired
+          logger.warn(`⚠️  ${name.toUpperCase()} process has exited unexpectedly`);
+          logger.warn(`    Consider restarting: kill -9 process and restart main.js`);
         }
       }
-    }, 10000);
+    }, 5000);
+
+    // Cleanup on exit
+    process.on('exit', () => {
+      if (this.monitorInterval) {
+        clearInterval(this.monitorInterval);
+      }
+    });
   }
 }
 
@@ -513,33 +634,73 @@ class ProcessManager {
 async function healthCheck() {
   logger.section('Health Checks');
 
-  // Wait for backend
+  // Wait for backend with exponential backoff
   logger.info('Waiting for backend to respond...');
-  const backendReady = await waitForService(
-    `http://localhost:${CONFIG.BACKEND_PORT}/api/health`,
-    CONFIG.RETRY_ATTEMPTS,
-    CONFIG.RETRY_DELAY
-  );
+  let backendReady = false;
+  let backendAttempts = 0;
+  const maxBackendAttempts = 30; // 30 seconds max
+
+  while (!backendReady && backendAttempts < maxBackendAttempts) {
+    try {
+      const result = await makeHttpRequest(
+        `http://localhost:${CONFIG.BACKEND_PORT}/api/health`,
+        5000
+      );
+      if (result) {
+        backendReady = true;
+        logger.success('Backend is responding');
+      }
+    } catch (err) {
+      // Silently continue
+    }
+
+    if (!backendReady) {
+      backendAttempts++;
+      process.stdout.write('.');
+      await sleep(1000);
+    }
+  }
 
   if (backendReady) {
-    logger.success('Backend is ready');
+    logger.success('Backend health check passed');
   } else {
-    logger.warn('Backend health check timeout. Continuing anyway...');
+    logger.warn('Backend health check timeout. Server may still be starting...');
   }
 
   // Wait for frontend
   logger.info('Waiting for frontend to respond...');
-  const frontendReady = await waitForService(
-    `http://localhost:${CONFIG.FRONTEND_PORT}`,
-    20,
-    1000
-  );
+  let frontendReady = false;
+  let frontendAttempts = 0;
+  const maxFrontendAttempts = 45; // 45 seconds for compilation
+
+  while (!frontendReady && frontendAttempts < maxFrontendAttempts) {
+    try {
+      const result = await makeHttpRequest(
+        `http://localhost:${CONFIG.FRONTEND_PORT}`,
+        5000
+      );
+      if (result) {
+        frontendReady = true;
+        logger.success('Frontend is responding');
+      }
+    } catch (err) {
+      // Silently continue
+    }
+
+    if (!frontendReady) {
+      frontendAttempts++;
+      process.stdout.write('.');
+      await sleep(1000);
+    }
+  }
 
   if (frontendReady) {
-    logger.success('Frontend is ready');
+    logger.success('Frontend health check passed');
   } else {
-    logger.warn('Frontend may still be compiling. This is normal on first run.');
+    logger.warn('Frontend compilation may still be in progress. This is normal on first run.');
   }
+
+  console.log(''); // New line after dots
 }
 
 // ============================================================================
@@ -632,6 +793,7 @@ ${Colors.GREEN}╚════════════════════�
 
   console.log(`${Colors.YELLOW}⏹️  To Stop:${Colors.RESET} Press ${Colors.RED}Ctrl+C${Colors.RESET}`);
   console.log(`${Colors.CYAN}📋 Logs:${Colors.RESET} ${CONFIG.LOG_FILE}`);
+  console.log(`${Colors.CYAN}🔗 API Docs:${Colors.RESET} http://localhost:${CONFIG.BACKEND_PORT}`);
   console.log('');
 
   console.log(`${Colors.CYAN}${'═'.repeat(63)}${Colors.RESET}`);

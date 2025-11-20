@@ -15,11 +15,13 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-Request-ID']
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Session configuration
 app.use(session({
@@ -83,14 +85,26 @@ app.use((req, res) => {
 // Cleanup old sessions every hour
 const cleanupInterval = setInterval(() => {
   try {
+    const beforeCount = sessionManager.getActiveSessionCount?.();
     sessionManager.cleanupOldSessions();
+    const afterCount = sessionManager.getActiveSessionCount?.();
     if (NODE_ENV === 'development') {
-      console.log('✓ Cleaned up old sessions');
+      console.log(`✓ Cleaned up old sessions (${beforeCount} -> ${afterCount})`);
     }
   } catch (err) {
     console.error('Error during session cleanup:', err);
   }
 }, 60 * 60 * 1000);
+
+// Periodic health log
+const healthLogInterval = setInterval(() => {
+  if (NODE_ENV === 'development') {
+    const health = sessionManager.getSessionHealth?.();
+    if (health) {
+      console.log(`📊 Health: ${health.activeSessions} active sessions`);
+    }
+  }
+}, 5 * 60 * 1000);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -112,11 +126,17 @@ app.use((err, req, res, next) => {
 const gracefulShutdown = () => {
   console.log('\n\n🛑 Graceful shutdown initiated...');
   clearInterval(cleanupInterval);
+  clearInterval(healthLogInterval);
   
   server.close(() => {
     console.log('✓ HTTP server closed');
-    sessionManager.cleanupAllSessions?.();
-    console.log('✓ All sessions cleaned up');
+    try {
+      const clearedCount = sessionManager.cleanupAllSessions?.();
+      console.log(`✓ Cleaned up ${clearedCount || 0} sessions`);
+    } catch (err) {
+      console.error('Error during cleanup:', err.message);
+    }
+    console.log('✓ Shutdown complete');
     process.exit(0);
   });
 
