@@ -95,19 +95,22 @@ class SessionManager {
 
     const isCorrect = selectedAnswer === correctAnswer;
     const penalty = isCorrect ? 0 : 50; // 50 point penalty for wrong answer
+    const reward = isCorrect ? (points || 100) : 0; // Add points for correct answer
     
     const answer = {
       questionId,
       selectedAnswer,
       isCorrect,
       penalty: penalty,
+      reward: reward,
       timestamp: Date.now()
     };
 
     session.answers.push(answer);
     
     if (isCorrect) {
-      // Correct answer - move to next level
+      // Correct answer - add reward points and move to next level
+      session.score = session.score + reward;
       session.correctAnswers += 1;
       session.currentLevel += 1;
     } else {
@@ -134,6 +137,7 @@ class SessionManager {
       isLocked: false, // Never lock in escape room mode
       isCompleted: session.isCompleted,
       penalty: penalty,
+      reward: reward,
       wrongAttempts: session.wrongAttempts
     };
   }
@@ -154,6 +158,7 @@ class SessionManager {
       isLocked: session.isLocked,
       elapsedTime: elapsed,
       remainingTime: remainingTime,
+      timeLimit: session.timeLimit,
       startTime: session.startTime,
       endTime: session.endTime
     };

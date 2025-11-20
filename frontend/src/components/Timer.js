@@ -1,24 +1,49 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import './Timer.css';
+import api from '../utils/api';
 
 function Timer({ timeLimit, onTimeout }) {
   const [timeRemaining, setTimeRemaining] = useState(timeLimit);
+  const [totalTimeLimit, setTotalTimeLimit] = useState(timeLimit);
+  const hasTimedOut = useRef(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeRemaining((prevTime) => {
-        if (prevTime <= 1000) {
-          clearInterval(interval);
-          onTimeout();
-          return 0;
+    // Fetch remaining time from server every second
+    const fetchRemainingTime = async () => {
+      try {
+        const response = await api.get('/quiz/stats');
+        if (response.data && response.data.stats) {
+          const stats = response.data.stats;
+          if (stats.remainingTime !== undefined) {
+            const remaining = stats.remainingTime;
+            setTimeRemaining(remaining);
+            
+            // Update total time limit if available
+            if (stats.timeLimit) {
+              setTotalTimeLimit(stats.timeLimit);
+            }
+            
+            // Check if time has expired
+            if (remaining <= 0 && !hasTimedOut.current) {
+              hasTimedOut.current = true;
+              onTimeout();
+            }
+          }
         }
-        return prevTime - 1000;
-      });
-    }, 1000);
+      } catch (err) {
+        console.error('Failed to fetch remaining time:', err);
+      }
+    };
+
+    // Fetch immediately on mount
+    fetchRemainingTime();
+
+    // Poll server every second for accurate time tracking
+    const interval = setInterval(fetchRemainingTime, 1000);
 
     return () => clearInterval(interval);
-  }, [timeLimit, onTimeout]);
+  }, [onTimeout]);
 
   const formatTime = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -28,7 +53,7 @@ function Timer({ timeLimit, onTimeout }) {
   };
 
   const getTimerClass = () => {
-    const percentage = (timeRemaining / timeLimit) * 100;
+    const percentage = (timeRemaining / totalTimeLimit) * 100;
     if (percentage <= 10) return 'critical';
     if (percentage <= 25) return 'warning';
     return 'normal';
@@ -70,7 +95,7 @@ function Timer({ timeLimit, onTimeout }) {
       <div className="timer-bar">
         <motion.div 
           className="timer-fill" 
-          style={{ width: `${(timeRemaining / timeLimit) * 100}%` }}
+          style={{ width: `${(timeRemaining / totalTimeLimit) * 100}%` }}
           animate={{ 
             boxShadow: timerClass === 'critical' 
               ? [

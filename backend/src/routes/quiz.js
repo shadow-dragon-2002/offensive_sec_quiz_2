@@ -52,6 +52,16 @@ router.post('/start', (req, res) => {
   }
 });
 
+// Shuffle array function
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 // Get current question
 router.get('/question', (req, res) => {
   try {
@@ -106,15 +116,38 @@ router.get('/question', (req, res) => {
       });
     }
 
+    // Shuffle options and track new position of correct answer
+    const originalOptions = [...currentQuestion.options];
+    const correctOption = originalOptions[currentQuestion.correctAnswer];
+    const shuffledOptions = shuffleArray(originalOptions);
+    const newCorrectIndex = shuffledOptions.indexOf(correctOption);
+
+    // Store the shuffled mapping in session for validation
+    if (!session.questionMappings) {
+      session.questionMappings = {};
+    }
+    session.questionMappings[session.currentLevel] = {
+      shuffledOptions,
+      correctIndex: newCorrectIndex
+    };
+
     // Don't send the correct answer to the client
-    const { correctAnswer, ...questionData } = currentQuestion;
+    const questionData = {
+      id: currentQuestion.id,
+      level: currentQuestion.level,
+      category: currentQuestion.category,
+      question: currentQuestion.question,
+      options: shuffledOptions,
+      difficulty: currentQuestion.difficulty,
+      points: currentQuestion.points
+    };
 
     res.json({
       success: true,
       question: questionData,
       currentLevel: session.currentLevel,
       totalQuestions: session.totalQuestions,
-      score: session.score,
+      currentScore: session.score,
       correctAnswers: session.correctAnswers
     });
   } catch (error) {
@@ -180,11 +213,15 @@ router.post('/answer', (req, res) => {
       });
     }
 
+    // Get the shuffled mapping for this question
+    const questionMapping = session.questionMappings?.[session.currentLevel];
+    const correctAnswerIndex = questionMapping ? questionMapping.correctIndex : question.correctAnswer;
+
     const result = sessionManager.submitAnswer(
       sessionId,
       questionId,
       selectedAnswer,
-      question.correctAnswer,
+      correctAnswerIndex,
       question.points
     );
 

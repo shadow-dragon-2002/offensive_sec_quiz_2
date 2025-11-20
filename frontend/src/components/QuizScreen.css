@@ -1,6 +1,7 @@
 .quiz-screen {
   width: 100%;
   max-width: 1000px;
+  margin: 0 auto;
   animation: fadeIn 0.5s ease-out;
 }
 

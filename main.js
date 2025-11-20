@@ -33,6 +33,7 @@ const CONFIG = {
   BACKEND_DIR: path.join(__dirname, 'backend'),
   FRONTEND_DIR: path.join(__dirname, 'frontend'),
   VERSION: '3.0.0',
+  PACKAGE_MANAGER: null, // Will be set to 'pnpm' or 'npm' during validation
 };
 
 // ============================================================================
@@ -141,7 +142,12 @@ const logger = new Logger(CONFIG.LOG_FILE);
 
 function commandExists(command) {
   return new Promise((resolve) => {
-    exec(`which ${command}`, (err) => {
+    // For Windows compatibility, try both 'where' and 'which'
+    const checkCommand = process.platform === 'win32' 
+      ? `where ${command}` 
+      : `which ${command}`;
+    
+    exec(checkCommand, { stdio: 'ignore' }, (err) => {
       resolve(!err);
     });
   });
@@ -175,9 +181,18 @@ function checkPortInUse(port) {
 
 function killProcessOnPort(port) {
   return new Promise((resolve) => {
-    exec(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`, () => {
-      resolve();
-    });
+    if (process.platform === 'win32') {
+      // Windows: Use netstat and taskkill
+      exec(`for /f "tokens=5" %a in ('netstat -aon ^| find ":${port}" ^| find "LISTENING"') do taskkill /F /PID %a`, 
+        { shell: 'cmd.exe' }, () => {
+        resolve();
+      });
+    } else {
+      // Unix/Linux/Mac: Use lsof
+      exec(`lsof -ti:${port} | xargs kill -9 2>/dev/null || true`, () => {
+        resolve();
+      });
+    }
   });
 }
 
@@ -226,13 +241,22 @@ async function validateEnvironment() {
   }
   logger.success(`Node.js ${nodeVersion} detected`);
 
-  // Check npm
+  // Check for package manager - prefer pnpm, fallback to npm
+  let packageManager = null;
+  const hasPnpm = await commandExists('pnpm');
   const hasNpm = await commandExists('npm');
-  if (!hasNpm) {
-    logger.error('npm not found. Please install Node.js with npm.');
+
+  if (hasPnpm) {
+    // On Windows, npm/pnpm commands are .cmd files
+    CONFIG.PACKAGE_MANAGER = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+    logger.success('pnpm is available (primary package manager)');
+  } else if (hasNpm) {
+    CONFIG.PACKAGE_MANAGER = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    logger.success('npm is available (fallback package manager)');
+  } else {
+    logger.error('Neither pnpm nor npm found. Please install Node.js with npm or install pnpm.');
     process.exit(1);
   }
-  logger.success('npm is available');
 
   // Check directories
   if (!fs.existsSync(CONFIG.BACKEND_DIR)) {
@@ -364,7 +388,7 @@ async function checkDependencies() {
   if (backendNeedsInstall) {
     logger.warn('Backend dependencies incomplete or missing. Installing...');
     await new Promise((resolve, reject) => {
-      const install = spawn('npm', ['install', '--force'], {
+      const install = spawn(CONFIG.PACKAGE_MANAGER, ['install', '--force'], {
         cwd: CONFIG.BACKEND_DIR,
         stdio: 'pipe',
       });
@@ -440,7 +464,7 @@ async function checkDependencies() {
   if (frontendNeedsInstall) {
     logger.warn('Frontend dependencies incomplete or missing. Installing...');
     await new Promise((resolve, reject) => {
-      const install = spawn('npm', ['install', '--force'], {
+      const install = spawn(CONFIG.PACKAGE_MANAGER, ['install', '--force'], {
         cwd: CONFIG.FRONTEND_DIR,
         stdio: 'pipe',
       });
@@ -527,8 +551,8 @@ class ProcessManager {
         cwd: CONFIG.BACKEND_DIR,
         env: {
           ...process.env,
-          PORT: CONFIG.BACKEND_PORT,
-          NODE_ENV: CONFIG.NODE_ENV,
+          PORT: String(CONFIG.BACKEND_PORT),
+          NODE_ENV: String(CONFIG.NODE_ENV),
           FRONTEND_URL: `http://localhost:${CONFIG.FRONTEND_PORT}`,
           CORS_ORIGIN: `http://localhost:${CONFIG.FRONTEND_PORT}`,
           NODE_PATH: path.join(CONFIG.BACKEND_DIR, 'node_modules'),
@@ -591,11 +615,11 @@ class ProcessManager {
       logger.section('Starting Frontend Server');
       logger.info(`Starting frontend on port ${CONFIG.FRONTEND_PORT}...`);
 
-      const frontend = spawn('npm', ['start'], {
+      const frontend = spawn(CONFIG.PACKAGE_MANAGER, ['start'], {
         cwd: CONFIG.FRONTEND_DIR,
         env: {
           ...process.env,
-          PORT: CONFIG.FRONTEND_PORT,
+          PORT: String(CONFIG.FRONTEND_PORT),
           REACT_APP_API_URL: `http://localhost:${CONFIG.BACKEND_PORT}/api`,
           REACT_APP_API_BASE: `http://localhost:${CONFIG.BACKEND_PORT}`,
           BROWSER: 'none',

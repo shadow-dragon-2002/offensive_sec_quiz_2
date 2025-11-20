@@ -9,12 +9,44 @@ import api from './utils/api';
 import audioManager from './utils/audioManager';
 
 function App() {
-  const [gameState, setGameState] = useState('start'); // start, playing, result
-  const [sessionData, setSessionData] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [gameState, setGameState] = useState(() => {
+    // Try to restore state from localStorage
+    const saved = localStorage.getItem('quizGameState');
+    return saved || 'start';
+  });
+  const [sessionData, setSessionData] = useState(() => {
+    const saved = localStorage.getItem('quizSessionData');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [stats, setStats] = useState(() => {
+    const saved = localStorage.getItem('quizFinalStats');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [quizCompleted, setQuizCompleted] = useState(() => {
+    return localStorage.getItem('quizEverCompleted') === 'true';
+  });
   const [error, setError] = useState(null);
   const [apiReady, setApiReady] = useState(false);
   const [backendStatus, setBackendStatus] = useState('checking'); // checking, online, offline
+
+  // Persist game state and session data to localStorage
+  useEffect(() => {
+    localStorage.setItem('quizGameState', gameState);
+  }, [gameState]);
+
+  useEffect(() => {
+    if (sessionData) {
+      localStorage.setItem('quizSessionData', JSON.stringify(sessionData));
+    } else {
+      localStorage.removeItem('quizSessionData');
+    }
+  }, [sessionData]);
+
+  useEffect(() => {
+    if (stats) {
+      localStorage.setItem('quizFinalStats', JSON.stringify(stats));
+    }
+  }, [stats]);
 
   // Check API availability on component mount and periodically
   useEffect(() => {
@@ -49,6 +81,12 @@ function App() {
   }, [gameState]);
 
   const startQuiz = async () => {
+    // Check if quiz has ever been completed
+    if (quizCompleted) {
+      setError('You have already completed this quiz. Your results are final and cannot be reset.');
+      return;
+    }
+
     try {
       setError(null);
       // Initialize audio on first user interaction
@@ -75,27 +113,43 @@ function App() {
   const handleQuizComplete = (finalStats) => {
     setStats(finalStats);
     setGameState('result');
+    // Mark quiz as permanently completed
+    localStorage.setItem('quizEverCompleted', 'true');
+    setQuizCompleted(true);
   };
 
   const handleSessionLocked = (finalStats) => {
     setStats(finalStats);
     setGameState('result');
+    // Mark quiz as permanently completed
+    localStorage.setItem('quizEverCompleted', 'true');
+    setQuizCompleted(true);
   };
 
   const resetQuiz = async () => {
+    // Once completed, quiz cannot be reset
+    if (quizCompleted) {
+      setError('This quiz has been completed and cannot be restarted. Your results are permanent.');
+      return;
+    }
+    
     try {
       await api.post('/quiz/reset');
       setGameState('start');
       setSessionData(null);
-      setStats(null);
       setError(null);
+      // Only clear session data, not final stats or completion flag
+      localStorage.removeItem('quizGameState');
+      localStorage.removeItem('quizSessionData');
     } catch (err) {
       console.error('Reset quiz error:', err);
       // Still reset locally even if API call fails
       setGameState('start');
       setSessionData(null);
-      setStats(null);
       setError(null);
+      // Only clear session data, not final stats or completion flag
+      localStorage.removeItem('quizGameState');
+      localStorage.removeItem('quizSessionData');
     }
   };
 

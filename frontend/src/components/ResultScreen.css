@@ -1,6 +1,7 @@
 .result-screen {
   width: 100%;
   max-width: 1000px;
+  margin: 0 auto;
   animation: fadeIn 0.5s ease-out;
 }
 
@@ -337,3 +338,43 @@
     padding: 1.2rem;
   }
 }
+
+/* Permanent Result Notice */
+.permanent-result-notice {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid #ff6b35;
+  border-radius: 10px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.notice-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lock-icon {
+  font-size: 3rem;
+  filter: drop-shadow(0 0 10px #ff6b35);
+}
+
+.notice-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.3rem;
+  color: #ff6b35;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+  margin: 0;
+}
+
+.notice-subtext {
+  font-size: 1rem;
+  color: #00d4ff;
+  opacity: 0.8;
+  margin: 0;
+}
+

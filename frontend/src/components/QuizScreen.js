@@ -48,7 +48,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           setQuestion(response.data.question);
           setStats({
             currentLevel: response.data.currentLevel,
-            totalQuestions: response.data.totalQuestions
+            totalQuestions: response.data.totalQuestions,
+            score: response.data.currentScore
           });
           setSelectedAnswer(null);
           setFeedback(null);
@@ -90,9 +91,13 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   };
 
   const handleAnswerSelect = (index) => {
-    if (!isSubmitting && !feedback) {
+    if (!isSubmitting && !(feedback && feedback.isCorrect)) {
       setSelectedAnswer(index);
       audioManager.playButtonClick();
+      // Clear feedback if selecting new answer after wrong answer
+      if (feedback && !feedback.isCorrect) {
+        setFeedback(null);
+      }
     }
   };
 
@@ -109,10 +114,17 @@ function QuizScreen({ onComplete, onSessionLocked }) {
       });
 
       if (response.data.success) {
+        const rewardMsg = response.data.isCorrect && response.data.reward 
+          ? ` +${response.data.reward} points!` 
+          : '';
+        const penaltyMsg = !response.data.isCorrect && response.data.penalty 
+          ? ` -${response.data.penalty} points penalty!` 
+          : '';
+        
         setFeedback({
           isCorrect: response.data.isCorrect,
           correctAnswer: response.data.correctAnswer,
-          message: response.data.message
+          message: response.data.message + rewardMsg + penaltyMsg
         });
 
         setStats({
@@ -135,18 +147,14 @@ function QuizScreen({ onComplete, onSessionLocked }) {
               fetchQuestion();
             }
           }, 2000);
-        } else if (response.data.isLocked) {
-          audioManager.playWrongAnswer(); // Play error sound
-          setTimeout(() => {
-            onSessionLocked({
-              score: response.data.score,
-              correctAnswers: response.data.currentLevel - 1,
-              locked: true
-            });
-          }, 2000);
         } else {
-          // Wrong but not locked - play penalty sound
+          // Wrong answer - play penalty sound but allow retry
           audioManager.playWrongAnswer();
+          // Clear selection and feedback after showing penalty
+          setTimeout(() => {
+            setFeedback(null);
+            setSelectedAnswer(null);
+          }, 2000);
         }
       } else {
         setError('Failed to submit answer: ' + response.data.message);
@@ -253,8 +261,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
                   feedback && selectedAnswer === index && !feedback.isCorrect ? 'incorrect' : ''
                 }`}
                 onClick={() => handleAnswerSelect(index)}
-                onMouseEnter={() => !feedback && audioManager.playButtonHover()}
-                disabled={isSubmitting || feedback}
+                onMouseEnter={() => !(feedback && feedback.isCorrect) && audioManager.playButtonHover()}
+                disabled={isSubmitting || (feedback && feedback.isCorrect)}
                 whileHover={{ scale: feedback ? 1 : 1.02 }}
                 whileTap={{ scale: feedback ? 1 : 0.98 }}
                 initial={{ opacity: 0, x: -20 }}
@@ -287,7 +295,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
         <button
           className="submit-button neon-button"
           onClick={handleSubmit}
-          disabled={selectedAnswer === null || isSubmitting || feedback}
+          disabled={selectedAnswer === null || isSubmitting || (feedback && feedback.isCorrect)}
         >
           {isSubmitting ? 'SUBMITTING...' : 'SUBMIT ANSWER'}
         </button>

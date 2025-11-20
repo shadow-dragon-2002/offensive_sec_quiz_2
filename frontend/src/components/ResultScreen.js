@@ -177,18 +177,18 @@ function ResultScreen({ stats, onRestart }) {
           </div>
         </div>
 
-        <motion.button 
-          className="restart-button neon-button" 
-          onClick={onRestart}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <motion.div 
+          className="permanent-result-notice"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.5 }}
         >
-          <span className="button-text">START NEW MISSION</span>
-          <span className="button-icon">🔄</span>
-        </motion.button>
+          <div className="notice-content">
+            <span className="lock-icon">🔒</span>
+            <p className="notice-text">Your results are now permanent and cannot be changed.</p>
+            <p className="notice-subtext">This quiz can only be completed once.</p>
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   );
