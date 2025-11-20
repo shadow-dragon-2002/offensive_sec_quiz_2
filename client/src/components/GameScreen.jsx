@@ -140,7 +140,7 @@ function GameScreen({ sessionData, onComplete }) {
           className="mb-8"
         >
           {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-orbitron font-black text-center mb-6 holographic-text">
+          <h1 className="text-4xl md:text-5xl font-orbitron font-black text-center mb-6 holographic-text neon-flicker">
             ⚡ CYBER INFILTRATION ⚡
           </h1>
 

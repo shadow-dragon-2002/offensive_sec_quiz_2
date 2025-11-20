@@ -100,11 +100,11 @@ function StageCard({ stage, onSubmitAnswer, isSubmitting }) {
           return (
             <motion.button
               key={index}
-              className={`w-full p-4 rounded-lg border-2 text-left font-jetbrains transition-all
-                ${isSelected && !answerResult ? 'border-hot-pink bg-hot-pink/20 scale-105' : ''}
-                ${!isSelected && !answerResult ? 'border-gray-700 bg-dark-surface/30 hover:border-cyber-blue hover:bg-dark-surface/50' : ''}
-                ${isCorrect ? 'border-neon-green bg-neon-green/20 animate-pulse-glow' : ''}
-                ${isWrong ? 'border-red-500 bg-red-500/20 animate-pulse' : ''}
+              className={`w-full p-5 rounded-lg border-2 text-left font-jetbrains transition-all relative overflow-hidden
+                ${isSelected && !answerResult ? 'border-hot-pink bg-hot-pink/20 scale-105 shadow-[0_0_30px_rgba(255,20,147,0.6)]' : ''}
+                ${!isSelected && !answerResult ? 'border-gray-700 bg-dark-surface/50 hover:border-cyber-blue hover:bg-dark-surface/70 hover:shadow-[0_0_20px_rgba(0,212,255,0.4)]' : ''}
+                ${isCorrect ? 'border-neon-green bg-neon-green/20 animate-pulse-glow shadow-[0_0_30px_rgba(0,255,65,0.6)]' : ''}
+                ${isWrong ? 'border-red-500 bg-red-500/20 animate-pulse shadow-[0_0_30px_rgba(255,0,68,0.6)]' : ''}
                 ${answerResult ? 'cursor-not-allowed' : 'cursor-pointer'}
               `}
               onClick={() => handleOptionSelect(index)}
@@ -113,23 +113,61 @@ function StageCard({ stage, onSubmitAnswer, isSubmitting }) {
               whileHover={!answerResult ? { scale: 1.02 } : {}}
               whileTap={!answerResult ? { scale: 0.98 } : {}}
             >
-              <div className="flex items-start gap-4">
-                <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold border-2
-                  ${isSelected && !answerResult ? 'border-hot-pink bg-hot-pink/30 text-hot-pink' : ''}
-                  ${!isSelected && !answerResult ? 'border-gray-600 bg-gray-800 text-gray-400' : ''}
-                  ${isCorrect ? 'border-neon-green bg-neon-green/30 text-neon-green' : ''}
-                  ${isWrong ? 'border-red-500 bg-red-500/30 text-red-500' : ''}
+              {/* Glitch effect overlay for selected options */}
+              {isSelected && !answerResult && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-hot-pink/10 via-transparent to-hot-pink/10"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                />
+              )}
+              
+              <div className="flex items-start gap-3 relative z-10">
+                {/* Answer label with ) formatting */}
+                <span className={`flex-shrink-0 font-orbitron text-xl font-black tracking-wider px-2
+                  ${isSelected && !answerResult ? 'text-hot-pink drop-shadow-[0_0_8px_rgba(255,20,147,0.8)]' : ''}
+                  ${!isSelected && !answerResult ? 'text-cyber-blue drop-shadow-[0_0_6px_rgba(0,212,255,0.6)]' : ''}
+                  ${isCorrect ? 'text-neon-green drop-shadow-[0_0_8px_rgba(0,255,65,0.8)]' : ''}
+                  ${isWrong ? 'text-red-500 drop-shadow-[0_0_8px_rgba(255,0,68,0.8)]' : ''}
                 `}>
-                  {String.fromCharCode(65 + index)}
+                  {String.fromCharCode(97 + index)})
                 </span>
-                <span className="flex-1 text-gray-200">
+                
+                {/* Vertical separator */}
+                <div className={`w-px h-auto self-stretch
+                  ${isSelected && !answerResult ? 'bg-hot-pink/50' : ''}
+                  ${!isSelected && !answerResult ? 'bg-cyber-blue/30' : ''}
+                  ${isCorrect ? 'bg-neon-green/50' : ''}
+                  ${isWrong ? 'bg-red-500/50' : ''}
+                `}></div>
+                
+                <span className={`flex-1 leading-relaxed
+                  ${isSelected && !answerResult ? 'text-gray-100 font-semibold' : 'text-gray-200'}
+                  ${isCorrect ? 'text-white font-semibold' : ''}
+                  ${isWrong ? 'text-gray-300' : ''}
+                `}>
                   {option}
                 </span>
+                
                 {isCorrect && (
-                  <span className="text-neon-green text-2xl">✓</span>
+                  <motion.span 
+                    className="text-neon-green text-3xl drop-shadow-[0_0_10px_rgba(0,255,65,1)]"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 200 }}
+                  >
+                    ✓
+                  </motion.span>
                 )}
                 {isWrong && (
-                  <span className="text-red-500 text-2xl">✗</span>
+                  <motion.span 
+                    className="text-red-500 text-3xl drop-shadow-[0_0_10px_rgba(255,0,68,1)]"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    ✗
+                  </motion.span>
                 )}
               </div>
             </motion.button>
@@ -147,7 +185,7 @@ function StageCard({ stage, onSubmitAnswer, isSubmitting }) {
             className="bg-hot-pink/20 border border-hot-pink rounded-lg p-4 mb-6"
           >
             <p className="font-jetbrains text-hot-pink font-bold text-center">
-              ⚡ PAYLOAD ARMED - Option {String.fromCharCode(65 + selectedOption)}) Selected
+              ⚡ PAYLOAD ARMED - Option {String.fromCharCode(97 + selectedOption)}) Selected
             </p>
           </motion.div>
         )}

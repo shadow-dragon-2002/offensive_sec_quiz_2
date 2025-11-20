@@ -7,15 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        'dark-bg': '#0a0a0a',
-        'dark-surface': '#121212',
-        'dark-border': '#1f1f1f',
+        'dark-bg': '#000000',
+        'dark-surface': '#0a0a0a',
+        'dark-border': '#1a1a1a',
         'cyber-blue': '#00d4ff',
         'cyber-pink': '#ff006e',
         'neon-green': '#00ff41',
         'hot-pink': '#ff1493',
         'cyber-purple': '#a855f7',
         'electric-blue': '#0ea5e9',
+        'ultraviolet': '#8b00ff',
       },
       fontFamily: {
         'orbitron': ['Orbitron', 'sans-serif'],

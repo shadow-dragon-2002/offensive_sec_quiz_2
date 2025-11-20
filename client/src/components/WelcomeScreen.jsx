@@ -13,7 +13,7 @@ function WelcomeScreen({ onStart, error }) {
       >
         {/* Title */}
         <motion.h1
-          className="text-6xl md:text-8xl font-orbitron font-black text-center mb-8 holographic-text"
+          className="text-6xl md:text-8xl font-orbitron font-black text-center mb-8 holographic-text glitch-intense neon-flicker"
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
@@ -28,7 +28,7 @@ function WelcomeScreen({ onStart, error }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <p className="text-2xl md:text-3xl font-orbitron font-bold neon-blue mb-2">
+          <p className="text-2xl md:text-3xl font-orbitron font-bold neon-blue mb-2 neon-flicker">
             OFFENSIVE SECURITY ESCAPE ROOM
           </p>
           <p className="text-lg md:text-xl font-jetbrains text-gray-400">

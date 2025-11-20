@@ -78,7 +78,11 @@ function App() {
     <div className="min-h-screen bg-dark-bg relative overflow-hidden crt-effect">
       {/* Background Effects */}
       <div className="scan-lines"></div>
-      <div className="fixed inset-0 bg-gradient-to-br from-cyber-blue/5 via-transparent to-cyber-pink/5 pointer-events-none"></div>
+      <div className="fixed inset-0 bg-gradient-to-br from-cyber-blue/10 via-ultraviolet/5 to-hot-pink/10 pointer-events-none"></div>
+      
+      {/* Additional neon glow spots */}
+      <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-electric-blue/5 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-hot-pink/5 rounded-full blur-[120px] pointer-events-none"></div>
       
       {/* Grid Overlay */}
       <div className="fixed inset-0 opacity-10 pointer-events-none" 

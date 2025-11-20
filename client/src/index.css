@@ -14,7 +14,11 @@ body {
   font-family: 'JetBrains Mono', monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0a0a0a;
+  background-color: #000000;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 20, 147, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
   color: #ffffff;
   overflow-x: hidden;
 }
@@ -242,6 +246,69 @@ body {
 
 .cyber-button:active {
   transform: scale(0.98);
+}
+
+/* Neon flicker effect */
+.neon-flicker {
+  animation: flicker 3s infinite;
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1;
+    text-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px currentColor,
+      0 0 40px currentColor;
+  }
+  20%, 24%, 55% {
+    opacity: 0.8;
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor;
+  }
+  22% {
+    opacity: 0.6;
+    text-shadow: 0 0 3px currentColor;
+  }
+}
+
+/* Enhanced glitch for titles */
+.glitch-intense {
+  position: relative;
+  animation: glitch-skew 5s infinite;
+}
+
+@keyframes glitch-skew {
+  0% {
+    transform: skew(0deg);
+  }
+  1% {
+    transform: skew(-2deg);
+  }
+  2% {
+    transform: skew(0deg);
+  }
+  3% {
+    transform: skew(2deg);
+  }
+  4% {
+    transform: skew(0deg);
+  }
+  100% {
+    transform: skew(0deg);
+  }
+}
+
+/* Cyberpunk border glow */
+.cyber-border-glow {
+  position: relative;
+  border: 2px solid;
+  box-shadow: 
+    inset 0 0 10px currentColor,
+    0 0 10px currentColor,
+    0 0 20px currentColor;
 }
 
 /* Progress bar */
