@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 const sessionManager = require('../models/Session');
 const questions = require('../data/escapeRoomQuestions');
+const errorHandler = require('../middleware/errorHandler');
 
 // Middleware to validate session exists
 router.use((req, res, next) => {
   if (!req.sessionID) {
-    return res.status(400).json({
-      success: false,
-      message: 'Session ID is required'
-    });
+    return res.status(400).json(
+      errorHandler.createErrorResponse(400, 'Session ID is required')
+    );
   }
   next();
 });

@@ -4,12 +4,15 @@
   "description": "Cyberpunk-themed Offensive Security Escape Room",
   "private": true,
   "scripts": {
+    "main": "node main.js",
+    "start": "node main.js",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ..",
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm start",
-    "start": "echo '⚠️  Please run ./launch.sh for the best experience' && echo 'Or manually: npm run start:backend (in one terminal) and npm run start:frontend (in another terminal)'",
+    "verify": "node backend/verify-startup.js",
+    "check": "node backend/check-config.js",
     "clean": "rm -rf backend/node_modules frontend/node_modules node_modules",
-    "setup": "npm run install:all && chmod +x launch.sh"
+    "setup": "npm run install:all && chmod +x launch.sh && chmod +x main.js"
   },
   "repository": {
     "type": "git",

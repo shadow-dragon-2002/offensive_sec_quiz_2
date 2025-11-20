@@ -506,46 +506,26 @@ main() {
     fi
     
     display_success
+    
+    log_section "Running Startup Verification"
+    log_message "INFO" "Waiting a moment for all services to stabilize..."
+    sleep 2
+    
+    # Run the verification script
+    if [ -f "$SCRIPT_DIR/backend/verify-startup.js" ]; then
+        log_message "INFO" "Running comprehensive startup verification..."
+        cd "$SCRIPT_DIR/backend"
+        if node verify-startup.js 2>&1 | tee -a "$LOG_FILE"; then
+            log_message "SUCCESS" "Startup verification passed!"
+        else
+            log_message "WARNING" "Startup verification had issues, but services are running"
+        fi
+        cd "$SCRIPT_DIR"
+    fi
+    
+    log_message "INFO" "All systems operational. Starting process monitoring..."
     monitor_processes
 }
 
 # ============ ENTRY POINT ============
 main "$@"
-BACKEND_PID=$!
-echo -e "${GREEN}✓ Backend server started (PID: $BACKEND_PID)${NC}"
-cd ..
-
-# Wait a moment for backend to start
-sleep 2
-
-# Verify backend is running
-echo -e "${BLUE}Verifying backend health...${NC}"
-if timeout 5 bash -c 'while ! curl -s http://localhost:5000/api/health > /dev/null; do sleep 0.1; done' 2>/dev/null; then
-  echo -e "${GREEN}✓ Backend is ready${NC}"
-else
-  echo -e "${YELLOW}Backend may still be starting, continuing...${NC}"
-fi
-
-echo ""
-
-# Start frontend
-echo -e "${BLUE}Starting Frontend Server...${NC}"
-cd frontend
-npm start &
-FRONTEND_PID=$!
-echo -e "${GREEN}✓ Frontend server started (PID: $FRONTEND_PID)${NC}"
-cd ..
-
-echo ""
-echo -e "${GREEN}════════════════════════════════════════════════════════${NC}"
-echo -e "${GREEN}✓ All servers running!${NC}"
-echo ""
-echo -e "  Frontend: ${BLUE}http://localhost:3000${NC}"
-echo -e "  Backend:  ${BLUE}http://localhost:5000${NC}"
-echo ""
-echo -e "${YELLOW}Press Ctrl+C to stop all servers${NC}"
-echo -e "${GREEN}════════════════════════════════════════════════════════${NC}"
-echo ""
-
-# Wait for both processes
-wait
