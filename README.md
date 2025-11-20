@@ -1,28 +1,60 @@
-# Offensive Security Quiz Game 🎯
+# Offensive Security Escape Room 🎯
 
-A full-stack React and Express.js quiz game focused on offensive security with 30 session-locked, progressive challenges. Features a cyberpunk-themed UI, real-time server-side scoring, timed playthrough, and secure session management.
+An immersive cyberpunk-themed offensive security challenge featuring 30 intermediate-to-hard progressive puzzles. Features a rich neon aesthetic with electric blue, hot pink, and ultraviolet purple accents, synthwave sound effects, glitch animations, and strict gameplay rules designed to confuse and challenge users.
 
-![Cybersecurity Challenge Arena](https://img.shields.io/badge/Cybersecurity-Challenge-00ff41?style=for-the-badge)
+![Cybersecurity Challenge Arena](https://img.shields.io/badge/Cybersecurity-Escape%20Room-00ff41?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18.2.0-61DAFB?style=for-the-badge&logo=react)
 ![Express.js](https://img.shields.io/badge/Express.js-4.18.2-000000?style=for-the-badge&logo=express)
+![Framer Motion](https://img.shields.io/badge/Framer%20Motion-10.16.4-ff006e?style=for-the-badge)
+
+## 🚀 Quick Start
+
+**Run the entire application with a single command:**
+
+```bash
+node main.js
+```
+
+That's it! The main.js launcher will:
+- ✅ Check and install dependencies automatically
+- ✅ Start the backend server on port 5000
+- ✅ Start the frontend on port 3000
+- ✅ Perform health checks
+- ✅ Display access instructions
+
+Then open your browser to: **http://localhost:3000**
 
 ## 🎮 Features
 
-### Core Functionality
-- **30 Progressive Challenges**: Questions covering Reconnaissance, Web Exploitation, Exploitation Techniques, Post-Exploitation, Privilege Escalation, and Advanced Persistent Threats
-- **Session-Locked Gameplay**: One wrong answer locks your session permanently - no retries!
-- **Real-Time Scoring**: Server-side score calculation with immediate feedback
-- **Timed Playthrough**: 30-minute countdown timer with visual alerts
-- **Secure Session Management**: Express-session with secure cookie handling
-- **Progressive Difficulty**: Questions range from easy (10 pts) to expert (30 pts)
+### Core Gameplay
+- **30 Progressive Challenges**: Intermediate-to-hard cybersecurity questions covering Network Infiltration, Web Exploitation, Memory Corruption, Wireless Security, Active Directory, Cryptography, Cloud Security, and more
+- **Confusingly Similar Options**: Multiple-choice questions with deliberately similar answers to increase difficulty
+- **No Hints Policy**: Wrong answers receive NO hints - correct answer is NEVER revealed on incorrect attempts
+- **Score Penalties**: -50 points per wrong answer, but you can complete all 30 stages regardless of score
+- **25-Minute Timer**: Strict time limit with visual and audio warnings
+- **Session Tracking**: One-time playthrough with secure session management to prevent resetting or cheating
 
-### UI/UX Features
-- **Cyberpunk Theme**: Neon-green aesthetics with glitch effects
-- **Terminal-Style Interface**: Authentic hacker experience
-- **Animated Feedback**: Visual and textual feedback for correct/incorrect answers
-- **Responsive Design**: Works on desktop, tablet, and mobile devices
-- **Achievement System**: Rank-based results (Beginner to Elite Hacker)
-- **Progress Tracking**: Real-time level and score display
+### Cyberpunk Theme & UI/UX
+- **Neon Color Scheme**: Electric blue (#00f3ff), hot pink (#ff006e), ultraviolet purple (#8b5cf6)
+- **Glitch Effects**: Screen glitches, flickering neon buttons, scanline overlays
+- **Grid Overlay**: Animated cyberpunk-style grid background
+- **Holographic HUD**: Futuristic heads-up display elements
+- **Terminal-Style Interface**: Authentic hacker terminal aesthetic
+- **Framer Motion Animations**: Smooth transitions and micro-interactions
+
+### Sound Effects (Web Audio API)
+- 🎵 **Synthwave Sounds**: Cyberpunk-themed audio effects
+- 🔊 **Laser Swooshes**: Button click sound effects
+- 🔔 **Digital Beeps**: Hover and interaction sounds
+- ✅ **Success Chimes**: Correct answer feedback
+- ❌ **Error Buzz**: Wrong answer feedback
+- ⏰ **Timer Warnings**: Critical time alerts
+
+### Answer Formatting
+- Options clearly labeled with **a)**, **b)**, **c)**, **d)**
+- Bold, color-highlighted labels for easy identification
+- Proper spacing between label and option text
+- Consistent formatting across all 30 questions
 
 ## 🏗️ Architecture
 
@@ -31,13 +63,15 @@ A full-stack React and Express.js quiz game focused on offensive security with 3
 frontend/
 ├── src/
 │   ├── components/
-│   │   ├── StartScreen.js      # Welcome and briefing screen
-│   │   ├── QuizScreen.js       # Main quiz interface
-│   │   ├── ResultScreen.js     # Results and statistics
-│   │   └── Timer.js            # Countdown timer component
+│   │   ├── StartScreen.js      # Welcome and mission briefing screen
+│   │   ├── QuizScreen.js       # Main quiz interface with questions
+│   │   ├── ResultScreen.js     # Results and achievement display
+│   │   ├── Timer.js            # Countdown timer with warnings
+│   │   └── ErrorBoundary.js    # Error handling component
 │   ├── utils/
-│   │   └── api.js              # Axios API client
-│   ├── styles/                 # Component CSS files
+│   │   ├── api.js              # Axios API client with health checks
+│   │   └── soundEffects.js     # Web Audio API sound effects
+│   ├── CyberpunkApp.css        # Main cyberpunk theme styles
 │   ├── App.js                  # Main application component
 │   └── index.js                # React entry point
 └── public/
@@ -49,13 +83,20 @@ frontend/
 backend/
 ├── src/
 │   ├── models/
-│   │   └── Session.js          # Session management logic
+│   │   └── Session.js          # Session management with scoring
 │   ├── routes/
 │   │   └── quiz.js             # Quiz API endpoints
 │   ├── data/
-│   │   └── questions.js        # Question bank (30 questions)
+│   │   ├── escapeRoomQuestions.js  # 30 escape room questions
+│   │   └── questions.js        # Legacy question bank
+│   ├── middleware/
+│   │   └── errorHandler.js     # Error handling middleware
 │   └── server.js               # Express server setup
 └── package.json
+
+### Main Launcher
+```
+main.js                         # Single-command application launcher
 ```
 
 ## 📊 Data Models
@@ -80,40 +121,40 @@ backend/
 ### Question Model
 ```javascript
 {
-  id: number,                    // Unique question ID
+  id: number,                    // Unique question ID (1-30)
   level: number,                 // Question level (1-30)
-  category: string,              // Question category
+  category: string,              // e.g., "Network Infiltration", "Web Exploitation"
   question: string,              // Question text
-  options: Array<string>,        // Answer options (4 choices)
-  correctAnswer: number,         // Index of correct answer
-  difficulty: string,            // easy, medium, hard
-  points: number                 // Points awarded (10-30)
+  options: Array<string>,        // 4 answer options starting with "a)", "b)", "c)", "d)"
+  correctAnswer: number,         // Index of correct answer (0-3)
+  difficulty: string,            // "intermediate" or "hard"
+  points: number                 // Points awarded (50 per correct answer)
 }
 ```
 
-## 🚀 Quick Start (5 Minutes)
+## 🚀 Installation & Setup
 
 ### Prerequisites
-- Node.js 14+ and npm (or Docker)
-- Ports 5000 and 3000 available
-- Modern web browser
+- Node.js 14+ and npm
+- Ports 5000 (backend) and 3000 (frontend) available
+- Modern web browser with JavaScript enabled
 
-### Option 1: Single Command Launch (Recommended) 🚀
+### Single Command Launch ⚡
 ```bash
-./start.sh
+node main.js
 ```
 
-**What it does automatically:**
-- ✅ Checks Node.js and npm installation
-- ✅ Validates directory structure
-- ✅ Installs dependencies (backend & frontend)
-- ✅ Creates `.env` configuration file
-- ✅ Checks port availability and resolves conflicts
-- ✅ Starts backend server with health checks
-- ✅ Starts frontend with environment variables
-- ✅ Monitors both services during execution
+**The main.js launcher handles everything:**
+- ✅ Validates Node.js environment (v14+)
+- ✅ Checks directory structure and required files
+- ✅ Installs dependencies automatically if needed
+- ✅ Creates backend `.env` configuration
+- ✅ Checks and frees ports 5000 and 3000
+- ✅ Starts backend server (Express.js on port 5000)
+- ✅ Starts frontend server (React on port 3000)
+- ✅ Performs health checks on both services
 - ✅ Displays success banner with access URLs
-- ✅ Handles graceful shutdown with Ctrl+C
+- ✅ Monitors services and handles graceful shutdown (Ctrl+C)
 
 **Output Example:**
 ```
