@@ -166,11 +166,18 @@ function QuizScreen({ sessionData, onSessionUpdate, onComplete, onSessionLocked 
   const handleSubmit = async () => {
     if (selectedAnswer === null || isSubmitting) return;
 
+    if (!sessionData?.quizState) {
+      setError('Quiz state not found. Please refresh and start again.');
+      return;
+    }
+
+    console.log('[QuizScreen] Submitting answer:', selectedAnswer, 'State:', sessionData.quizState);
+    
     setIsSubmitting(true);
     try {
       const response = await withHealthCheck(async () => {
         return await api.post('/quiz/answer', {
-          quizState: sessionData?.quizState,
+          quizState: sessionData.quizState,
           answer: selectedAnswer
         });
       });

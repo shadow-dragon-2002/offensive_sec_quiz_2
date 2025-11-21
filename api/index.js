@@ -135,7 +135,7 @@ app.post('/api/quiz/answer', (req, res) => {
     return res.json({ success: false, message: 'No quiz state provided' });
   }
   
-  if (!answer) {
+  if (answer === undefined || answer === null || answer === '') {
     return res.json({ success: false, message: 'No answer provided' });
   }
   
