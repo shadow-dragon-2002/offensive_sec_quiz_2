@@ -12,9 +12,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const [stats, setStats] = useState({ currentLevel: 1, score: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [cheatSequence, setCheatSequence] = useState(''); // Track key presses for cheat code
-  const MAX_RETRIES = 3;
   
   // Cheat code: UUDDLRLR (Up, Up, Down, Down, Left, Right, Left, Right - Konami Code style)
   const CHEAT_SEQUENCE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
@@ -114,7 +112,6 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           });
           setSelectedAnswer(null);
           setFeedback(null);
-          setRetryCount(0); // Reset retry count on success
           audioManager.playGlitch(); // Play sound when question loads
         }
       } else {
@@ -229,7 +226,6 @@ function QuizScreen({ onComplete, onSessionLocked }) {
       
       if (err.type === 'NETWORK_ERROR') {
         errorMessage += 'Please check your connection and try again.';
-        setRetryCount(prev => prev + 1);
       } else if (err.type === 'API_ERROR') {
         errorMessage += err.message;
       } else {
