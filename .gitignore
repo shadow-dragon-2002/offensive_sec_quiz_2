@@ -50,3 +50,7 @@ yarn.lock
 
 # Build files
 *.tsbuildinfo
+
+# Vercel
+.vercel
+.vercel.json.bak

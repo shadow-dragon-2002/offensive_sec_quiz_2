@@ -169,4 +169,67 @@ export const withHealthCheck = async (fn, context = 'API call') => {
   throw lastError;
 };
 
+// ============ LEADERBOARD API ============
+
+/**
+ * Submit score to leaderboard
+ * @param {string} username - Player's username
+ * @returns {Promise<Object>} Submission result with rank and entry
+ */
+export const submitScore = async (username) => {
+  try {
+    const response = await api.post('/quiz/leaderboard/submit', { username });
+    return response.data;
+  } catch (error) {
+    console.error('[Submit Score Error]', error);
+    throw error;
+  }
+};
+
+/**
+ * Get leaderboard
+ * @param {number} limit - Maximum number of entries to retrieve
+ * @returns {Promise<Object>} Leaderboard data
+ */
+export const getLeaderboard = async (limit = 100) => {
+  try {
+    const response = await api.get('/quiz/leaderboard', { params: { limit } });
+    return response.data;
+  } catch (error) {
+    console.error('[Get Leaderboard Error]', error);
+    throw error;
+  }
+};
+
+/**
+ * Get user's rank in leaderboard
+ * @returns {Promise<Object>} User's rank
+ */
+export const getUserRank = async () => {
+  try {
+    const response = await api.get('/quiz/leaderboard/rank');
+    return response.data;
+  } catch (error) {
+    console.error('[Get User Rank Error]', error);
+    throw error;
+  }
+};
+
+// ============ SECRET CHEAT CODE ============
+
+/**
+ * Activate cheat code to instantly complete quiz with perfect score
+ * @param {string} code - The secret cheat code
+ * @returns {Promise<Object>} Cheat activation result
+ */
+export const activateCheat = async (code) => {
+  try {
+    const response = await api.post('/quiz/cheat/activate', { code });
+    return response.data;
+  } catch (error) {
+    console.error('[Cheat Activation Error]', error);
+    throw error;
+  }
+};
+
 export default api;

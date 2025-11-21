@@ -17,7 +17,9 @@
     "start:backend": "cd backend && npm start",
     "start:frontend": "cd frontend && npm start",
     "clean": "rm -rf backend/node_modules frontend/node_modules node_modules",
-    "setup": "npm run install:all && chmod +x launch.sh main.js verify-startup.js error-recovery.js"
+    "setup": "npm run install:all && chmod +x launch.sh main.js verify-startup.js error-recovery.js",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel"
   },
   "repository": {
     "type": "git",
@@ -32,5 +34,8 @@
     "educational"
   ],
   "author": "Your Name",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "vercel": "^48.10.6"
+  }
 }

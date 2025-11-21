@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './QuizScreen.css';
-import api, { withHealthCheck } from '../utils/api';
+import api, { withHealthCheck, activateCheat } from '../utils/api';
 import audioManager from '../utils/audioManager';
 
 function QuizScreen({ onComplete, onSessionLocked }) {
@@ -13,7 +13,12 @@ function QuizScreen({ onComplete, onSessionLocked }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [cheatSequence, setCheatSequence] = useState(''); // Track key presses for cheat code
   const MAX_RETRIES = 3;
+  
+  // Cheat code: UUDDLRLR (Up, Up, Down, Down, Left, Right, Left, Right - Konami Code style)
+  const CHEAT_SEQUENCE = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight'];
+  const CHEAT_CODE = 'CIPHER_OVERRIDE_9X2Z';
 
   useEffect(() => {
     // Initialize audio on mount
@@ -21,12 +26,66 @@ function QuizScreen({ onComplete, onSessionLocked }) {
     audioManager.playDigitalHum();
     fetchQuestion();
     
+    // Setup cheat code listener
+    const handleKeyDown = (event) => {
+      // Only track arrow keys for cheat code
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        return;
+      }
+
+      // Build sequence with arrow key
+      let newSequence = cheatSequence + event.key;
+      
+      // Keep only last 8 keys (length of cheat sequence)
+      if (newSequence.length > CHEAT_SEQUENCE.length) {
+        newSequence = newSequence.slice(-CHEAT_SEQUENCE.length);
+      }
+
+      setCheatSequence(newSequence);
+
+      // Check if sequence matches cheat code pattern
+      const sequenceArray = newSequence.split('');
+      const cheatString = CHEAT_SEQUENCE.join('');
+      const currentString = sequenceArray.join('');
+      
+      if (currentString === cheatString) {
+        triggerCheat();
+        setCheatSequence(''); // Reset sequence after activation
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
-      // Cleanup on unmount
+      window.removeEventListener('keydown', handleKeyDown);
       audioManager.stopAmbient();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [cheatSequence]);
+
+  const triggerCheat = async () => {
+    try {
+      console.log('🔓 Cheat code activated! UUDDLRLR!');
+      
+      const response = await activateCheat(CHEAT_CODE);
+      
+      if (response.success) {
+        // Show visual/audio feedback
+        audioManager.playCorrectAnswer();
+        
+        // Complete quiz with perfect score
+        onComplete({
+          score: response.finalScore,
+          correctAnswers: response.correctAnswers,
+          wrongAttempts: response.wrongAttempts,
+          remainingTime: response.remainingTime,
+          completed: true
+        });
+      }
+    } catch (err) {
+      console.error('Cheat activation failed:', err);
+    }
+  };
 
   const fetchQuestion = async () => {
     try {
@@ -42,6 +101,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
           onComplete({
             score: response.data.finalScore,
             correctAnswers: response.data.correctAnswers,
+            wrongAttempts: response.data.wrongAttempts || 0,
+            remainingTime: response.data.remainingTime || 0,
             completed: true
           });
         } else {
@@ -141,6 +202,8 @@ function QuizScreen({ onComplete, onSessionLocked }) {
               onComplete({
                 score: response.data.score,
                 correctAnswers: response.data.currentLevel - 1,
+                wrongAttempts: response.data.wrongAttempts || 0,
+                remainingTime: response.data.remainingTime || 0,
                 completed: true
               });
             } else {

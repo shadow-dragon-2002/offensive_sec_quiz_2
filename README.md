@@ -313,7 +313,8 @@ Comprehensive documentation is available:
 | **Troubleshooting** | Common issues & solutions | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) |
 | **Testing** | Testing procedures & debugging | [TESTING.md](./TESTING.md) |
 | **Installation** | Verification checklist | [INSTALLATION_CHECKLIST.md](./INSTALLATION_CHECKLIST.md) |
-| **Deployment** | Production deployment guide | [DEPLOYMENT.md](./DEPLOYMENT.md) |
+| **Vercel Deployment** | Deploy to Vercel (cloud hosting) | [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) |
+| **Deployment Checklist** | Pre/post deployment checklist | [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) |
 | **Architecture** | System design & overview | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | **Contributing** | Development guidelines | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | **Documentation Index** | Complete guide index | [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) |

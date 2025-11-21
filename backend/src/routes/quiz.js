@@ -86,12 +86,18 @@ router.get('/question', (req, res) => {
     }
 
     if (session.isCompleted) {
+      const remainingTime = session.endTime 
+        ? Math.max(0, session.timeLimit - (session.endTime - session.startTime))
+        : 0;
+      
       return res.status(200).json({
         success: true,
         message: 'Quiz completed!',
         isCompleted: true,
         finalScore: session.score,
         correctAnswers: session.correctAnswers,
+        wrongAttempts: session.wrongAttempts,
+        remainingTime: remainingTime,
         totalTime: session.endTime - session.startTime
       });
     }
@@ -229,6 +235,15 @@ router.post('/answer', (req, res) => {
       return res.status(400).json(result);
     }
 
+    // Calculate remaining time if completed
+    let remainingTime = 0;
+    if (result.isCompleted) {
+      const session = sessionManager.getSession(sessionId);
+      if (session && session.endTime) {
+        remainingTime = Math.max(0, session.timeLimit - (session.endTime - session.startTime));
+      }
+    }
+
     res.json({
       success: true,
       isCorrect: result.isCorrect,
@@ -238,6 +253,7 @@ router.post('/answer', (req, res) => {
       isCompleted: result.isCompleted,
       penalty: result.penalty,
       wrongAttempts: result.wrongAttempts,
+      remainingTime: remainingTime,
       message: result.isCorrect 
         ? 'ACCESS GRANTED - Proceeding to next sector...' 
         : 'ACCESS DENIED - Security breach detected. Point penalty applied.'
@@ -319,6 +335,172 @@ router.post('/reset', (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to reset quiz',
+      error: error.message
+    });
+  }
+});
+
+// Submit score to leaderboard
+router.post('/leaderboard/submit', (req, res) => {
+  try {
+    const sessionId = req.sessionID;
+    const { username } = req.body;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+
+    if (!username || username.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is required'
+      });
+    }
+
+    if (username.length > 30) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username must be 30 characters or less'
+      });
+    }
+
+    const result = sessionManager.submitToLeaderboard(sessionId, username);
+    
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    res.json({
+      success: true,
+      message: 'Score submitted successfully',
+      entry: result.entry,
+      rank: result.rank
+    });
+  } catch (error) {
+    console.error('Submit leaderboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit score to leaderboard',
+      error: error.message
+    });
+  }
+});
+
+// Get leaderboard
+router.get('/leaderboard', (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const leaderboard = sessionManager.getLeaderboard(limit);
+    
+    res.json({
+      success: true,
+      leaderboard: leaderboard,
+      total: leaderboard.length
+    });
+  } catch (error) {
+    console.error('Get leaderboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get leaderboard',
+      error: error.message
+    });
+  }
+});
+
+// Get user rank
+router.get('/leaderboard/rank', (req, res) => {
+  try {
+    const sessionId = req.sessionID;
+    
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+
+    const rank = sessionManager.getUserRank(sessionId);
+    
+    if (rank === null) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found in leaderboard'
+      });
+    }
+
+    res.json({
+      success: true,
+      rank: rank
+    });
+  } catch (error) {
+    console.error('Get rank error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get rank',
+      error: error.message
+    });
+  }
+});
+
+// Hidden cheat code endpoint - instantly complete quiz with perfect score
+router.post('/cheat/activate', (req, res) => {
+  try {
+    const sessionId = req.sessionID;
+    const { code } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required'
+      });
+    }
+
+    // Validate cheat code - secret combination
+    const validCode = 'CIPHER_OVERRIDE_9X2Z';
+    
+    if (code !== validCode) {
+      return res.status(403).json({
+        success: false,
+        message: 'Invalid cheat code'
+      });
+    }
+
+    const session = sessionManager.getSession(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: 'Session not found'
+      });
+    }
+
+    // Instantly complete the quiz with perfect score
+    // 30 correct answers + maximum points possible
+    session.currentLevel = 31; // Move past level 30
+    session.correctAnswers = 30;
+    session.wrongAttempts = 0;
+    session.score = 4000; // Perfect score
+    session.isCompleted = true;
+    session.endTime = Date.now();
+
+    sessionManager.updateSession(sessionId, session);
+
+    res.json({
+      success: true,
+      message: 'Cheat code activated! Quiz completed with perfect score.',
+      finalScore: session.score,
+      correctAnswers: session.correctAnswers,
+      wrongAttempts: session.wrongAttempts,
+      remainingTime: Math.max(0, session.timeLimit - (session.endTime - session.startTime))
+    });
+  } catch (error) {
+    console.error('Cheat code error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to activate cheat code',
       error: error.message
     });
   }
