@@ -60,19 +60,16 @@ app.use(session({
 const questions = require('../backend/src/data/questions');
 const escapeRoomQuestions = require('../backend/src/data/escapeRoomQuestions');
 
-// ============ SESSION STORE (in-memory for serverless) ============
-const sessions = {};
-
 // ============ ROUTES ============
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running' });
 });
 
 app.post('/api/quiz/start', (req, res) => {
-  const sessionId = `session-${Date.now()}-${Math.random()}`;
   const timeLimit = 30 * 60; // 30 minutes in seconds
   
-  sessions[sessionId] = {
+  // Store quiz state directly in express session
+  req.session.quiz = {
     currentLevel: 1,
     score: 0,
     answered: [],
@@ -82,7 +79,6 @@ app.post('/api/quiz/start', (req, res) => {
     endTime: Date.now() + (timeLimit * 1000)
   };
   
-  req.session.sessionId = sessionId;
   req.session.save((err) => {
     if (err) {
       console.error('Session save error:', err);
@@ -91,7 +87,7 @@ app.post('/api/quiz/start', (req, res) => {
     
     res.json({
       success: true,
-      sessionId,
+      sessionId: req.sessionID,
       message: 'Quiz session started',
       totalQuestions: questions.length,
       timeLimit: timeLimit
@@ -101,40 +97,39 @@ app.post('/api/quiz/start', (req, res) => {
 
 // Support both GET and POST for question endpoint
 app.all('/api/quiz/question', (req, res) => {
-  const sessionId = req.session?.sessionId;
-  
-  if (!sessionId || !sessions[sessionId]) {
-    return res.json({ success: false, isLocked: true, message: 'Session not found' });
+  if (!req.session?.quiz) {
+    return res.json({ success: false, isLocked: true, message: 'Session not found. Please start the quiz.' });
   }
   
-  const session = sessions[sessionId];
+  const quiz = req.session.quiz;
   
   // Check if time has expired
   const now = Date.now();
-  if (now > session.endTime) {
-    session.isLocked = true;
+  if (now > quiz.endTime) {
+    quiz.isLocked = true;
+    req.session.save();
     return res.json({
       success: false,
       isLocked: true,
       message: 'Time expired',
-      finalScore: session.score
+      finalScore: quiz.score
     });
   }
   
-  if (session.isLocked) {
+  if (quiz.isLocked) {
     return res.json({ success: false, isLocked: true, message: 'Session locked' });
   }
   
-  const currentLevel = session.currentLevel;
+  const currentLevel = quiz.currentLevel;
   
   if (currentLevel > questions.length) {
     return res.json({
       success: true,
       isCompleted: true,
       completed: true,
-      finalScore: session.score,
-      correctAnswers: session.answered.length,
-      remainingTime: Math.max(0, Math.floor((session.endTime - now) / 1000)),
+      finalScore: quiz.score,
+      correctAnswers: quiz.answered.length,
+      remainingTime: Math.max(0, Math.floor((quiz.endTime - now) / 1000)),
       message: 'Quiz completed!'
     });
   }
@@ -152,25 +147,37 @@ app.all('/api/quiz/question', (req, res) => {
     },
     currentLevel,
     totalQuestions: questions.length,
-    currentScore: session.score
+    currentScore: quiz.score
   });
 });
 
 app.post('/api/quiz/answer', (req, res) => {
   const { answer } = req.body;
-  const sessionId = req.session?.sessionId;
   
-  if (!sessionId || !sessions[sessionId]) {
+  if (!req.session?.quiz) {
     return res.json({ success: false, isLocked: true, message: 'Session not found' });
   }
   
-  const session = sessions[sessionId];
+  const quiz = req.session.quiz;
   
-  if (session.isLocked) {
+  // Check if time has expired
+  const now = Date.now();
+  if (now > quiz.endTime) {
+    quiz.isLocked = true;
+    req.session.save();
+    return res.json({
+      success: false,
+      isLocked: true,
+      message: 'Time expired',
+      finalScore: quiz.score
+    });
+  }
+  
+  if (quiz.isLocked) {
     return res.json({ success: false, isLocked: true, message: 'Session locked' });
   }
   
-  const currentLevel = session.currentLevel;
+  const currentLevel = quiz.currentLevel;
   
   if (currentLevel > questions.length) {
     return res.json({ success: false, message: 'Quiz already completed' });
@@ -180,37 +187,43 @@ app.post('/api/quiz/answer', (req, res) => {
   const isCorrect = question.correctAnswer === answer;
   
   if (!isCorrect) {
-    session.isLocked = true;
+    quiz.isLocked = true;
+    req.session.save();
     return res.json({
       success: false,
       isCorrect: false,
       message: '❌ Incorrect answer! Your session has been locked.',
       correctAnswer: question.correctAnswer,
       explanation: question.explanation || 'Incorrect',
-      finalScore: session.score
+      finalScore: quiz.score
     });
   }
   
-  session.score += question.points;
-  session.currentLevel += 1;
-  session.answered.push({ level: currentLevel, answer });
+  quiz.score += question.points;
+  quiz.currentLevel += 1;
+  quiz.answered.push({ level: currentLevel, answer });
   
-  res.json({
-    success: true,
-    isCorrect: true,
-    message: '✅ Correct!',
-    pointsAwarded: question.points,
-    newScore: session.score,
-    nextLevel: session.currentLevel,
-    explanation: question.explanation || 'Correct!'
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error:', err);
+      return res.status(500).json({ success: false, message: 'Failed to save progress' });
+    }
+    
+    res.json({
+      success: true,
+      isCorrect: true,
+      message: '✅ Correct!',
+      pointsAwarded: question.points,
+      newScore: quiz.score,
+      nextLevel: quiz.currentLevel,
+      explanation: question.explanation || 'Correct!'
+    });
   });
 });
 
 // ============ QUIZ STATS ENDPOINT (for timer) ============
 app.get('/api/quiz/stats', (req, res) => {
-  const sessionId = req.session?.sessionId;
-  
-  if (!sessionId || !sessions[sessionId]) {
+  if (!req.session?.quiz) {
     return res.json({ 
       success: false, 
       message: 'Session not found',
@@ -221,19 +234,19 @@ app.get('/api/quiz/stats', (req, res) => {
     });
   }
   
-  const session = sessions[sessionId];
+  const quiz = req.session.quiz;
   const now = Date.now();
-  const remainingTime = Math.max(0, Math.floor((session.endTime - now) / 1000));
+  const remainingTime = Math.max(0, Math.floor((quiz.endTime - now) / 1000));
   
   res.json({
     success: true,
     stats: {
-      currentLevel: session.currentLevel,
-      score: session.score,
+      currentLevel: quiz.currentLevel,
+      score: quiz.score,
       totalQuestions: questions.length,
       remainingTime: remainingTime,
-      timeLimit: session.timeLimit,
-      isLocked: session.isLocked
+      timeLimit: quiz.timeLimit,
+      isLocked: quiz.isLocked
     }
   });
 });
