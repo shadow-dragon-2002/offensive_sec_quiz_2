@@ -1,5 +1,6 @@
-// Vercel Serverless Function Entry Point - STATELESS VERSION
+// Vercel Serverless Function Entry Point
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -9,6 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const JWT_SECRET = process.env.SESSION_SECRET || 'offensive-sec-quiz-secret-key-change-in-production';
 
 // ============ MIDDLEWARE ============
 // Configure CORS with safe defaults
@@ -34,13 +36,35 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'X-Request-ID']
+  allowedHeaders: ['Content-Type', 'X-Request-ID', 'Authorization']
 };
 
 app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============ JWT HELPER FUNCTIONS ============
+function createToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+}
+
+function verifyToken(token) {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return null;
+  }
+}
+
+function getQuizFromRequest(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  const token = authHeader.substring(7);
+  return verifyToken(token);
+}
 
 // ============ QUIZ DATA ============
 const questions = require('../backend/src/data/questions');
@@ -51,61 +75,67 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running' });
 });
 
-// Start quiz - returns initial state
 app.post('/api/quiz/start', (req, res) => {
   const timeLimit = 30 * 60; // 30 minutes in seconds
-  const now = Date.now();
   
+  // Create quiz state
   const quizState = {
     currentLevel: 1,
     score: 0,
     answered: [],
     isLocked: false,
-    startTime: now,
+    startTime: Date.now(),
     timeLimit: timeLimit,
-    endTime: now + (timeLimit * 1000)
+    endTime: Date.now() + (timeLimit * 1000)
   };
+  
+  // Generate JWT token with quiz state
+  const token = createToken(quizState);
   
   res.json({
     success: true,
-    quizState: quizState,
+    token: token,
     message: 'Quiz session started',
     totalQuestions: questions.length,
     timeLimit: timeLimit
   });
 });
 
-// Get current question - client sends current state
-app.post('/api/quiz/question', (req, res) => {
-  const { quizState } = req.body;
+// Support both GET and POST for question endpoint
+app.all('/api/quiz/question', (req, res) => {
+  const quiz = getQuizFromRequest(req);
   
-  if (!quizState) {
-    return res.json({ success: false, isLocked: true, message: 'No quiz state provided' });
+  if (!quiz) {
+    return res.json({ success: false, isLocked: true, message: 'Session not found. Please start the quiz.' });
   }
   
   // Check if time has expired
   const now = Date.now();
-  if (now > quizState.endTime) {
+  if (now > quiz.endTime) {
+    quiz.isLocked = true;
     return res.json({
       success: false,
       isLocked: true,
       message: 'Time expired',
-      finalScore: quizState.score
+      finalScore: quiz.score
     });
   }
   
-  if (quizState.isLocked) {
+  if (quiz.isLocked) {
     return res.json({ success: false, isLocked: true, message: 'Session locked' });
   }
   
-  const currentLevel = quizState.currentLevel;
+  const currentLevel = quiz.currentLevel;
   
   if (currentLevel > questions.length) {
     return res.json({
-      success: false,
+      success: true,
       isCompleted: true,
-      message: 'Quiz completed!',
-      finalScore: quizState.score
+      completed: true,
+      finalScore: quiz.score,
+      correctAnswers: quiz.answered.length,
+      remainingTime: Math.max(0, Math.floor((quiz.endTime - now) / 1000)),
+      message: 'Quiz completed!'
     });
   }
   
@@ -116,45 +146,43 @@ app.post('/api/quiz/question', (req, res) => {
     question: {
       id: question.id,
       level: currentLevel,
-      question: question.question,
+      text: question.text,
       options: question.options,
-      hint: question.hint,
-      category: question.category
+      points: question.points
     },
-    currentLevel: currentLevel,
-    score: quizState.score,
-    totalQuestions: questions.length
+    currentLevel,
+    totalQuestions: questions.length,
+    currentScore: quiz.score
   });
 });
 
-// Submit answer - client sends current state + answer
 app.post('/api/quiz/answer', (req, res) => {
-  const { quizState, answer } = req.body;
+  const { answer } = req.body;
   
-  if (!quizState) {
-    return res.json({ success: false, message: 'No quiz state provided' });
+  if (!req.session?.quiz) {
+    return res.json({ success: false, isLocked: true, message: 'Session not found' });
   }
   
-  if (!answer) {
-    return res.json({ success: false, message: 'No answer provided' });
-  }
+  const quiz = req.session.quiz;
   
   // Check if time has expired
   const now = Date.now();
-  if (now > quizState.endTime) {
+  if (now > quiz.endTime) {
+    quiz.isLocked = true;
+    req.session.save();
     return res.json({
       success: false,
       isLocked: true,
       message: 'Time expired',
-      finalScore: quizState.score
+      finalScore: quiz.score
     });
   }
   
-  if (quizState.isLocked) {
+  if (quiz.isLocked) {
     return res.json({ success: false, isLocked: true, message: 'Session locked' });
   }
   
-  const currentLevel = quizState.currentLevel;
+  const currentLevel = quiz.currentLevel;
   
   if (currentLevel > questions.length) {
     return res.json({ success: false, message: 'Quiz already completed' });
@@ -163,46 +191,39 @@ app.post('/api/quiz/answer', (req, res) => {
   const question = questions[currentLevel - 1];
   const isCorrect = question.correctAnswer === answer;
   
-  // Update state
-  const newState = { ...quizState };
-  
   if (!isCorrect) {
-    newState.isLocked = true;
+    quiz.isLocked = true;
     return res.json({
       success: false,
       isCorrect: false,
       message: '❌ Incorrect answer! Your session has been locked.',
       correctAnswer: question.correctAnswer,
       explanation: question.explanation || 'Incorrect',
-      finalScore: newState.score,
-      quizState: newState
+      finalScore: quiz.score
     });
   }
   
-  newState.score += question.points;
-  newState.currentLevel += 1;
-  newState.answered.push({ level: currentLevel, answer });
+  quiz.score += question.points;
+  quiz.currentLevel += 1;
+  quiz.answered.push({ level: currentLevel, answer });
   
   res.json({
     success: true,
     isCorrect: true,
     message: '✅ Correct!',
     pointsAwarded: question.points,
-    newScore: newState.score,
-    nextLevel: newState.currentLevel,
-    explanation: question.explanation || 'Correct!',
-    quizState: newState
+    newScore: quiz.score,
+    nextLevel: quiz.currentLevel,
+    explanation: question.explanation || 'Correct!'
   });
 });
 
-// Get quiz stats (for timer) - client sends current state
-app.post('/api/quiz/stats', (req, res) => {
-  const { quizState } = req.body;
-  
-  if (!quizState) {
+// ============ QUIZ STATS ENDPOINT (for timer) ============
+app.get('/api/quiz/stats', (req, res) => {
+  if (!req.session?.quiz) {
     return res.json({ 
       success: false, 
-      message: 'No quiz state provided',
+      message: 'Session not found',
       stats: {
         remainingTime: 0,
         timeLimit: 30 * 60
@@ -210,22 +231,24 @@ app.post('/api/quiz/stats', (req, res) => {
     });
   }
   
+  const quiz = req.session.quiz;
   const now = Date.now();
-  const remainingMs = Math.max(0, quizState.endTime - now);
-  const remainingSeconds = Math.floor(remainingMs / 1000);
+  const remainingTime = Math.max(0, Math.floor((quiz.endTime - now) / 1000));
   
   res.json({
     success: true,
     stats: {
-      remainingTime: remainingSeconds,
-      timeLimit: quizState.timeLimit,
-      currentLevel: quizState.currentLevel,
-      score: quizState.score
+      currentLevel: quiz.currentLevel,
+      score: quiz.score,
+      totalQuestions: questions.length,
+      remainingTime: remainingTime,
+      timeLimit: quiz.timeLimit,
+      isLocked: quiz.isLocked
     }
   });
 });
 
-// ============ ERROR HANDLER ============
+// ============ ERROR HANDLING ============
 app.use((err, req, res, next) => {
   console.error('Error:', err);
   res.status(500).json({
