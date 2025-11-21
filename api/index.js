@@ -77,6 +77,9 @@ app.post('/api/quiz/start', (req, res) => {
     endTime: Date.now() + (timeLimit * 1000)
   };
   
+  console.log('Session created:', req.session);
+  console.log('Session headers:', res.getHeaders());
+  
   // cookie-session automatically saves to cookie, no callback needed
   res.json({
     success: true,
