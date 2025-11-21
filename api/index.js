@@ -70,12 +70,16 @@ app.get('/api/health', (req, res) => {
 
 app.post('/api/quiz/start', (req, res) => {
   const sessionId = `session-${Date.now()}-${Math.random()}`;
+  const timeLimit = 30 * 60; // 30 minutes in seconds
+  
   sessions[sessionId] = {
     currentLevel: 1,
     score: 0,
     answered: [],
     isLocked: false,
-    startTime: Date.now()
+    startTime: Date.now(),
+    timeLimit: timeLimit,
+    endTime: Date.now() + (timeLimit * 1000)
   };
   
   req.session.sessionId = sessionId;
@@ -89,12 +93,14 @@ app.post('/api/quiz/start', (req, res) => {
       success: true,
       sessionId,
       message: 'Quiz session started',
-      totalQuestions: questions.length
+      totalQuestions: questions.length,
+      timeLimit: timeLimit
     });
   });
 });
 
-app.post('/api/quiz/question', (req, res) => {
+// Support both GET and POST for question endpoint
+app.all('/api/quiz/question', (req, res) => {
   const sessionId = req.session?.sessionId;
   
   if (!sessionId || !sessions[sessionId]) {
@@ -102,6 +108,18 @@ app.post('/api/quiz/question', (req, res) => {
   }
   
   const session = sessions[sessionId];
+  
+  // Check if time has expired
+  const now = Date.now();
+  if (now > session.endTime) {
+    session.isLocked = true;
+    return res.json({
+      success: false,
+      isLocked: true,
+      message: 'Time expired',
+      finalScore: session.score
+    });
+  }
   
   if (session.isLocked) {
     return res.json({ success: false, isLocked: true, message: 'Session locked' });
@@ -112,8 +130,11 @@ app.post('/api/quiz/question', (req, res) => {
   if (currentLevel > questions.length) {
     return res.json({
       success: true,
+      isCompleted: true,
       completed: true,
       finalScore: session.score,
+      correctAnswers: session.answered.length,
+      remainingTime: Math.max(0, Math.floor((session.endTime - now) / 1000)),
       message: 'Quiz completed!'
     });
   }
@@ -182,6 +203,38 @@ app.post('/api/quiz/answer', (req, res) => {
     newScore: session.score,
     nextLevel: session.currentLevel,
     explanation: question.explanation || 'Correct!'
+  });
+});
+
+// ============ QUIZ STATS ENDPOINT (for timer) ============
+app.get('/api/quiz/stats', (req, res) => {
+  const sessionId = req.session?.sessionId;
+  
+  if (!sessionId || !sessions[sessionId]) {
+    return res.json({ 
+      success: false, 
+      message: 'Session not found',
+      stats: {
+        remainingTime: 0,
+        timeLimit: 30 * 60
+      }
+    });
+  }
+  
+  const session = sessions[sessionId];
+  const now = Date.now();
+  const remainingTime = Math.max(0, Math.floor((session.endTime - now) / 1000));
+  
+  res.json({
+    success: true,
+    stats: {
+      currentLevel: session.currentLevel,
+      score: session.score,
+      totalQuestions: questions.length,
+      remainingTime: remainingTime,
+      timeLimit: session.timeLimit,
+      isLocked: session.isLocked
+    }
   });
 });
 
