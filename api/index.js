@@ -68,7 +68,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend server is running' });
 });
 
-app.get('/api/quiz/start', (req, res) => {
+app.post('/api/quiz/start', (req, res) => {
   const sessionId = `session-${Date.now()}-${Math.random()}`;
   sessions[sessionId] = {
     currentLevel: 1,
@@ -94,7 +94,7 @@ app.get('/api/quiz/start', (req, res) => {
   });
 });
 
-app.get('/api/quiz/question', (req, res) => {
+app.post('/api/quiz/question', (req, res) => {
   const sessionId = req.session?.sessionId;
   
   if (!sessionId || !sessions[sessionId]) {
