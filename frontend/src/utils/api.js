@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // ============ CONFIGURATION ============
-// In production (Vercel), defaults to /api (relative path)
+// In production (Vercel), defaults to backend URL
 // In development, defaults to http://localhost:5000/api
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://backend-pm84fu275-shadow-dragon-2002s-projects.vercel.app/api' : 'http://localhost:5000/api');
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
 const TIMEOUT = 15000; // ms
