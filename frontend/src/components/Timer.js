@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import './Timer.css';
 import api from '../utils/api';
 
-function Timer({ timeLimit, onTimeout }) {
+function Timer({ timeLimit, sessionData, onTimeout }) {
   const [timeRemaining, setTimeRemaining] = useState(timeLimit);
   const [totalTimeLimit, setTotalTimeLimit] = useState(timeLimit);
   const hasTimedOut = useRef(false);
@@ -12,7 +12,7 @@ function Timer({ timeLimit, onTimeout }) {
     // Fetch remaining time from server every second
     const fetchRemainingTime = async () => {
       try {
-        const response = await api.get('/quiz/stats');
+        const response = await api.post('/quiz/stats', { quizState: sessionData?.quizState });
         if (response.data && response.data.stats) {
           const stats = response.data.stats;
           if (stats.remainingTime !== undefined) {
@@ -43,13 +43,14 @@ function Timer({ timeLimit, onTimeout }) {
     const interval = setInterval(fetchRemainingTime, 1000);
 
     return () => clearInterval(interval);
-  }, [onTimeout]);
+  }, [onTimeout, sessionData]);
 
-  const formatTime = (ms) => {
-    const totalSeconds = Math.floor(ms / 1000);
+  const formatTime = (seconds) => {
+    // API returns seconds, not milliseconds
+    const totalSeconds = Math.floor(seconds);
     const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const secs = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
   const getTimerClass = () => {

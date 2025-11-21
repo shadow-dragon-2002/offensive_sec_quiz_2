@@ -55,13 +55,13 @@ async function testQuizFlow() {
     
     // Test 3: Check stats
     console.log('3. Checking quiz stats...');
-    const stats = await client.get('/quiz/stats');
+    const stats = await client.post('/quiz/stats', { quizState: start.data.quizState });
     console.log('✓ Stats Response:', stats.data);
     console.log('');
     
     // Test 4: Get first question
     console.log('4. Getting first question...');
-    const question = await client.get('/quiz/question');
+    const question = await client.post('/quiz/question', { quizState: start.data.quizState });
     console.log('✓ Question Response:', {
       success: question.data.success,
       level: question.data.currentLevel,

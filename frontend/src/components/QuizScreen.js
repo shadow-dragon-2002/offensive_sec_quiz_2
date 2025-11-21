@@ -4,7 +4,7 @@ import './QuizScreen.css';
 import api, { withHealthCheck, activateCheat } from '../utils/api';
 import audioManager from '../utils/audioManager';
 
-function QuizScreen({ onComplete, onSessionLocked }) {
+function QuizScreen({ sessionData, onSessionUpdate, onComplete, onSessionLocked }) {
   const [question, setQuestion] = useState(null);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,7 +91,7 @@ function QuizScreen({ onComplete, onSessionLocked }) {
       setError(null);
       
       const response = await withHealthCheck(async () => {
-        return await api.get('/quiz/question');
+        return await api.post('/quiz/question', { quizState: sessionData?.quizState });
       });
       
       if (response.data.success) {
@@ -104,11 +104,15 @@ function QuizScreen({ onComplete, onSessionLocked }) {
             completed: true
           });
         } else {
+          // Update session with any state changes from response
+          if (response.data.quizState && onSessionUpdate) {
+            onSessionUpdate({ ...sessionData, quizState: response.data.quizState });
+          }
           setQuestion(response.data.question);
           setStats({
             currentLevel: response.data.currentLevel,
             totalQuestions: response.data.totalQuestions,
-            score: response.data.currentScore
+            score: response.data.score
           });
           setSelectedAnswer(null);
           setFeedback(null);
@@ -166,41 +170,51 @@ function QuizScreen({ onComplete, onSessionLocked }) {
     try {
       const response = await withHealthCheck(async () => {
         return await api.post('/quiz/answer', {
-          questionId: question.id,
-          selectedAnswer: selectedAnswer
+          quizState: sessionData?.quizState,
+          answer: selectedAnswer
         });
       });
 
-      if (response.data.success) {
-        const rewardMsg = response.data.isCorrect && response.data.reward 
-          ? ` +${response.data.reward} points!` 
+      // Handle both success and failure responses
+      const data = response.data;
+      
+      // Check if answer was correct or incorrect
+      if (data.isCorrect !== undefined) {
+        const rewardMsg = data.isCorrect && data.reward 
+          ? ` +${data.reward} points!` 
           : '';
-        const penaltyMsg = !response.data.isCorrect && response.data.penalty 
-          ? ` -${response.data.penalty} points penalty!` 
+        const penaltyMsg = !data.isCorrect && data.penalty 
+          ? ` -${data.penalty} points penalty!` 
           : '';
         
         setFeedback({
-          isCorrect: response.data.isCorrect,
-          correctAnswer: response.data.correctAnswer,
-          message: response.data.message + rewardMsg + penaltyMsg
+          isCorrect: data.isCorrect,
+          correctAnswer: data.correctAnswer,
+          message: data.message + rewardMsg + penaltyMsg,
+          explanation: data.explanation
         });
 
+        // Update session with new quiz state from response
+        if (data.quizState && onSessionUpdate) {
+          onSessionUpdate({ ...sessionData, quizState: data.quizState });
+        }
+
         setStats({
-          currentLevel: response.data.currentLevel,
-          score: response.data.score,
+          currentLevel: data.nextLevel || data.currentLevel || stats.currentLevel,
+          score: data.newScore || data.score || data.finalScore || stats.score,
           totalQuestions: stats.totalQuestions
         });
 
-        if (response.data.isCorrect) {
+        if (data.isCorrect) {
           audioManager.playCorrectAnswer(); // Play success sound
           audioManager.playLaserSwoosh(); // Add laser effect
           setTimeout(() => {
-            if (response.data.isCompleted) {
+            if (data.isCompleted) {
               onComplete({
-                score: response.data.score,
-                correctAnswers: response.data.currentLevel - 1,
-                wrongAttempts: response.data.wrongAttempts || 0,
-                remainingTime: response.data.remainingTime || 0,
+                score: data.newScore || data.score,
+                correctAnswers: data.nextLevel - 1,
+                wrongAttempts: data.wrongAttempts || 0,
+                remainingTime: data.remainingTime || 0,
                 completed: true
               });
             } else {
@@ -208,16 +222,29 @@ function QuizScreen({ onComplete, onSessionLocked }) {
             }
           }, 2000);
         } else {
-          // Wrong answer - play penalty sound but allow retry
+          // Wrong answer
           audioManager.playWrongAnswer();
-          // Clear selection and feedback after showing penalty
-          setTimeout(() => {
-            setFeedback(null);
-            setSelectedAnswer(null);
-          }, 2000);
+          
+          // Check if session is locked
+          if (data.isLocked) {
+            setTimeout(() => {
+              onSessionLocked({
+                score: data.finalScore || stats.score,
+                correctAnswers: stats.currentLevel - 1,
+                locked: true,
+                reason: 'incorrect_answer'
+              });
+            }, 2000);
+          } else {
+            // Allow retry - clear selection and feedback after showing penalty
+            setTimeout(() => {
+              setFeedback(null);
+              setSelectedAnswer(null);
+            }, 2000);
+          }
         }
-      } else {
-        setError('Failed to submit answer: ' + response.data.message);
+      } else if (!data.success) {
+        setError('Failed to submit answer: ' + data.message);
       }
     } catch (err) {
       console.error('[QuizScreen] Error submitting answer:', err);

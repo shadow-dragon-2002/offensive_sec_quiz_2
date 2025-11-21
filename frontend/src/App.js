@@ -100,7 +100,12 @@ function App() {
       }
       const response = await api.post('/quiz/start');
       if (response.data.success) {
-        setSessionData(response.data);
+        // Store both the response data AND the quizState
+        const sessionWithState = {
+          ...response.data,
+          quizState: response.data.quizState
+        };
+        setSessionData(sessionWithState);
         setGameState('playing');
       } else {
         setError('Failed to start quiz. Please try again.');
@@ -183,7 +188,8 @@ function App() {
 
       {gameState === 'playing' && sessionData && (
         <Timer 
-          timeLimit={sessionData.timeLimit} 
+          timeLimit={sessionData.timeLimit}
+          sessionData={sessionData}
           onTimeout={() => handleSessionLocked({ 
             score: 0, 
             correctAnswers: 0, 
@@ -232,6 +238,8 @@ function App() {
               transition={{ duration: 0.5 }}
             >
               <QuizScreen 
+                sessionData={sessionData}
+                onSessionUpdate={setSessionData}
                 onComplete={handleQuizComplete}
                 onSessionLocked={handleSessionLocked}
               />
