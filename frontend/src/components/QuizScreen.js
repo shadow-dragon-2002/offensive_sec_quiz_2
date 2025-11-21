@@ -94,6 +94,17 @@ function QuizScreen({ sessionData, onSessionUpdate, onComplete, onSessionLocked 
         return await api.post('/quiz/question', { quizState: sessionData?.quizState });
       });
       
+      // Check if session is locked first
+      if (response.data.isLocked) {
+        onSessionLocked({
+          score: response.data.finalScore || 0,
+          correctAnswers: 0,
+          locked: true,
+          reason: response.data.message
+        });
+        return;
+      }
+      
       if (response.data.success) {
         if (response.data.isCompleted) {
           onComplete({

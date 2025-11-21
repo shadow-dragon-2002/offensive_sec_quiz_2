@@ -9,10 +9,15 @@ function Timer({ timeLimit, sessionData, onTimeout }) {
   const hasTimedOut = useRef(false);
 
   useEffect(() => {
+    // Don't fetch if no session data available
+    if (!sessionData?.quizState) {
+      return;
+    }
+    
     // Fetch remaining time from server every second
     const fetchRemainingTime = async () => {
       try {
-        const response = await api.post('/quiz/stats', { quizState: sessionData?.quizState });
+        const response = await api.post('/quiz/stats', { quizState: sessionData.quizState });
         if (response.data && response.data.stats) {
           const stats = response.data.stats;
           if (stats.remainingTime !== undefined) {
@@ -33,6 +38,7 @@ function Timer({ timeLimit, sessionData, onTimeout }) {
         }
       } catch (err) {
         console.error('Failed to fetch remaining time:', err);
+        // Don't trigger timeout on network errors
       }
     };
 

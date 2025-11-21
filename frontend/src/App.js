@@ -90,6 +90,10 @@ function App() {
 
     try {
       setError(null);
+      // Clear any old session data before starting fresh
+      setSessionData(null);
+      localStorage.removeItem('quizSessionData');
+      
       // Initialize audio on first user interaction
       audioManager.init();
       audioManager.playLaserSwoosh();
@@ -119,6 +123,9 @@ function App() {
   const handleQuizComplete = (finalStats) => {
     setStats(finalStats);
     setGameState('result');
+    // Clear session data
+    setSessionData(null);
+    localStorage.removeItem('quizSessionData');
     // Mark quiz as permanently completed
     localStorage.setItem('quizEverCompleted', 'true');
     setQuizCompleted(true);
@@ -127,6 +134,9 @@ function App() {
   const handleSessionLocked = (finalStats) => {
     setStats(finalStats);
     setGameState('result');
+    // Clear locked session data
+    setSessionData(null);
+    localStorage.removeItem('quizSessionData');
     // Mark quiz as permanently completed
     localStorage.setItem('quizEverCompleted', 'true');
     setQuizCompleted(true);
