@@ -63,7 +63,7 @@ function App() {
         setBackendStatus('offline');
         setApiReady(false);
         if (gameState === 'start') {
-          const apiUrl = process.env.REACT_APP_API_URL || 'https://backend-nu02c2kg6-shadow-dragon-2002s-projects.vercel.app/api';
+          const apiUrl = process.env.REACT_APP_API_URL || 'https://backend-zd6wi2iva-shadow-dragon-2002s-projects.vercel.app/api';
           setError(`❌ Backend Server Offline - Expected at ${apiUrl}. Retrying automatically...`);
         }
       }
@@ -220,7 +220,7 @@ function App() {
             <span className="error-text">SYSTEM ERROR:</span> {error}
             {!apiReady && (
               <p style={{ fontSize: '0.85em', marginTop: '10px', fontFamily: 'Share Tech Mono, monospace' }}>
-                <span className="prompt">$</span> Backend expected at: {process.env.REACT_APP_API_URL || 'https://backend-nu02c2kg6-shadow-dragon-2002s-projects.vercel.app/api'}
+                <span className="prompt">$</span> Backend expected at: {process.env.REACT_APP_API_URL || 'https://backend-zd6wi2iva-shadow-dragon-2002s-projects.vercel.app/api'}
               </p>
             )}
           </motion.div>

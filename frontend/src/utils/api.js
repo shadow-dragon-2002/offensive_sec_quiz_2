@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ============ CONFIGURATION ============
 // Always use Vercel backend URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backend-nu02c2kg6-shadow-dragon-2002s-projects.vercel.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://backend-zd6wi2iva-shadow-dragon-2002s-projects.vercel.app/api';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
 const TIMEOUT = 15000; // ms
