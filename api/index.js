@@ -1,11 +1,185 @@
 // Vercel Serverless Function Entry Point
-const path = require('path');
+const express = require('express');
+const session = require('express-session');
+const cors = require('cors');
+const dotenv = require('dotenv');
 
-// Set up path resolution for backend modules
-process.env.NODE_PATH = path.join(__dirname, '../backend/node_modules');
-require('module').Module._initPaths();
+// Load environment variables
+dotenv.config();
 
-const app = require('../backend/src/server');
+const app = express();
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Export for Vercel serverless function
+// ============ MIDDLEWARE ============
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'X-Request-ID']
+}));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============ SESSION CONFIGURATION ============
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'offensive-sec-quiz-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    secure: NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax'
+  }
+}));
+
+// ============ QUIZ DATA ============
+const questions = require('../backend/src/data/questions');
+const escapeRoomQuestions = require('../backend/src/data/escapeRoomQuestions');
+
+// ============ SESSION STORE (in-memory for serverless) ============
+const sessions = {};
+
+// ============ ROUTES ============
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend server is running' });
+});
+
+app.get('/api/quiz/start', (req, res) => {
+  const sessionId = `session-${Date.now()}-${Math.random()}`;
+  sessions[sessionId] = {
+    currentLevel: 1,
+    score: 0,
+    answered: [],
+    isLocked: false,
+    startTime: Date.now()
+  };
+  
+  req.session.sessionId = sessionId;
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error:', err);
+      return res.status(500).json({ success: false, message: 'Session error' });
+    }
+    
+    res.json({
+      success: true,
+      sessionId,
+      message: 'Quiz session started',
+      totalQuestions: questions.length
+    });
+  });
+});
+
+app.get('/api/quiz/question', (req, res) => {
+  const sessionId = req.session?.sessionId;
+  
+  if (!sessionId || !sessions[sessionId]) {
+    return res.json({ success: false, isLocked: true, message: 'Session not found' });
+  }
+  
+  const session = sessions[sessionId];
+  
+  if (session.isLocked) {
+    return res.json({ success: false, isLocked: true, message: 'Session locked' });
+  }
+  
+  const currentLevel = session.currentLevel;
+  
+  if (currentLevel > questions.length) {
+    return res.json({
+      success: true,
+      completed: true,
+      finalScore: session.score,
+      message: 'Quiz completed!'
+    });
+  }
+  
+  const question = questions[currentLevel - 1];
+  
+  res.json({
+    success: true,
+    question: {
+      id: question.id,
+      level: currentLevel,
+      text: question.text,
+      options: question.options,
+      points: question.points
+    },
+    currentLevel,
+    totalQuestions: questions.length,
+    currentScore: session.score
+  });
+});
+
+app.post('/api/quiz/answer', (req, res) => {
+  const { answer } = req.body;
+  const sessionId = req.session?.sessionId;
+  
+  if (!sessionId || !sessions[sessionId]) {
+    return res.json({ success: false, isLocked: true, message: 'Session not found' });
+  }
+  
+  const session = sessions[sessionId];
+  
+  if (session.isLocked) {
+    return res.json({ success: false, isLocked: true, message: 'Session locked' });
+  }
+  
+  const currentLevel = session.currentLevel;
+  
+  if (currentLevel > questions.length) {
+    return res.json({ success: false, message: 'Quiz already completed' });
+  }
+  
+  const question = questions[currentLevel - 1];
+  const isCorrect = question.correctAnswer === answer;
+  
+  if (!isCorrect) {
+    session.isLocked = true;
+    return res.json({
+      success: false,
+      isCorrect: false,
+      message: '❌ Incorrect answer! Your session has been locked.',
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation || 'Incorrect',
+      finalScore: session.score
+    });
+  }
+  
+  session.score += question.points;
+  session.currentLevel += 1;
+  session.answered.push({ level: currentLevel, answer });
+  
+  res.json({
+    success: true,
+    isCorrect: true,
+    message: '✅ Correct!',
+    pointsAwarded: question.points,
+    newScore: session.score,
+    nextLevel: session.currentLevel,
+    explanation: question.explanation || 'Correct!'
+  });
+});
+
+// ============ ERROR HANDLING ============
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: NODE_ENV === 'development' ? err.message : 'An error occurred'
+  });
+});
+
+// ============ 404 HANDLER ============
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint not found'
+  });
+});
+
 module.exports = app;
