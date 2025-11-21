@@ -1,6 +1,6 @@
 // Vercel Serverless Function Entry Point
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
@@ -44,16 +44,14 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ============ SESSION CONFIGURATION ============
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'offensive-sec-quiz-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    secure: NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'lax'
-  }
+// Use cookie-session for serverless - stores session data IN the cookie itself
+app.use(cookieSession({
+  name: 'quiz-session',
+  keys: [process.env.SESSION_SECRET || 'offensive-sec-quiz-secret-key-change-in-production'],
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  secure: NODE_ENV === 'production',
+  httpOnly: true,
+  sameSite: 'lax'
 }));
 
 // ============ QUIZ DATA ============
@@ -68,7 +66,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/quiz/start', (req, res) => {
   const timeLimit = 30 * 60; // 30 minutes in seconds
   
-  // Store quiz state directly in express session
+  // Store quiz state directly in cookie session
   req.session.quiz = {
     currentLevel: 1,
     score: 0,
@@ -79,19 +77,13 @@ app.post('/api/quiz/start', (req, res) => {
     endTime: Date.now() + (timeLimit * 1000)
   };
   
-  req.session.save((err) => {
-    if (err) {
-      console.error('Session save error:', err);
-      return res.status(500).json({ success: false, message: 'Session error' });
-    }
-    
-    res.json({
-      success: true,
-      sessionId: req.sessionID,
-      message: 'Quiz session started',
-      totalQuestions: questions.length,
-      timeLimit: timeLimit
-    });
+  // cookie-session automatically saves to cookie, no callback needed
+  res.json({
+    success: true,
+    sessionId: 'cookie-based',
+    message: 'Quiz session started',
+    totalQuestions: questions.length,
+    timeLimit: timeLimit
   });
 });
 
@@ -188,7 +180,6 @@ app.post('/api/quiz/answer', (req, res) => {
   
   if (!isCorrect) {
     quiz.isLocked = true;
-    req.session.save();
     return res.json({
       success: false,
       isCorrect: false,
@@ -203,21 +194,14 @@ app.post('/api/quiz/answer', (req, res) => {
   quiz.currentLevel += 1;
   quiz.answered.push({ level: currentLevel, answer });
   
-  req.session.save((err) => {
-    if (err) {
-      console.error('Session save error:', err);
-      return res.status(500).json({ success: false, message: 'Failed to save progress' });
-    }
-    
-    res.json({
-      success: true,
-      isCorrect: true,
-      message: '✅ Correct!',
-      pointsAwarded: question.points,
-      newScore: quiz.score,
-      nextLevel: quiz.currentLevel,
-      explanation: question.explanation || 'Correct!'
-    });
+  res.json({
+    success: true,
+    isCorrect: true,
+    message: '✅ Correct!',
+    pointsAwarded: question.points,
+    newScore: quiz.score,
+    nextLevel: quiz.currentLevel,
+    explanation: question.explanation || 'Correct!'
   });
 });
 
