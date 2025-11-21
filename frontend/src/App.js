@@ -63,7 +63,8 @@ function App() {
         setBackendStatus('offline');
         setApiReady(false);
         if (gameState === 'start') {
-          setError('❌ Backend Server Offline - Expected at http://localhost:5000. Retrying automatically...');
+          const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+          setError(`❌ Backend Server Offline - Expected at ${apiUrl}. Retrying automatically...`);
         }
       }
     };
@@ -203,7 +204,7 @@ function App() {
             <span className="error-text">SYSTEM ERROR:</span> {error}
             {!apiReady && (
               <p style={{ fontSize: '0.85em', marginTop: '10px', fontFamily: 'Share Tech Mono, monospace' }}>
-                <span className="prompt">$</span> Backend expected at: http://localhost:5000
+                <span className="prompt">$</span> Backend expected at: {process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}
               </p>
             )}
           </motion.div>
