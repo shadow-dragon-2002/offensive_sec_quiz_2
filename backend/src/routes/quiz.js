@@ -62,8 +62,8 @@ function shuffleArray(array) {
   return shuffled;
 }
 
-// Get current question
-router.get('/question', (req, res) => {
+// Get current question (both GET and POST for compatibility)
+const getQuestionHandler = (req, res) => {
   try {
     const sessionId = req.sessionID;
     const session = sessionManager.getSession(sessionId);
@@ -164,7 +164,11 @@ router.get('/question', (req, res) => {
       error: error.message
     });
   }
-});
+};
+
+// Register both GET and POST routes for /question
+router.get('/question', getQuestionHandler);
+router.post('/question', getQuestionHandler);
 
 // Submit answer
 router.post('/answer', (req, res) => {
